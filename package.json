@@ -1,0 +1,20 @@
+{
+  "name": "delivery-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web-loja,web-cliente -c blue,green,red \"npm:dev:api\" \"npm:dev:web-loja\" \"npm:dev:web-cliente\"",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web-loja": "npm run dev --workspace=apps/web-loja",
+    "dev:web-cliente": "npm run dev --workspace=apps/web-cliente",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
