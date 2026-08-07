@@ -1,7 +1,8 @@
 services:
   db:
     build:
-      context: ./sql
+      context: .
+      dockerfile: sql/Dockerfile
     container_name: delivery_db
     restart: unless-stopped
     environment:
