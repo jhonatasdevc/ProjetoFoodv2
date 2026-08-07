@@ -116,6 +116,16 @@ CREATE TABLE endereco (
   criado_em       TIMESTAMP NOT NULL DEFAULT now()
 );
 
+CREATE TABLE favorito (
+  id              SERIAL PRIMARY KEY,
+  id_usuario      INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  id_loja         INTEGER NOT NULL REFERENCES loja(id) ON DELETE CASCADE,
+  criado_em       TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT favorito_usuario_loja_unique UNIQUE (id_usuario, id_loja)
+);
+
+CREATE INDEX idx_favorito_usuario ON favorito(id_usuario);
+
 -- Código de verificação por celular (OTP). Nesta versão o código é mockado:
 -- retornado na própria resposta da API em vez de enviado por SMS de verdade.
 CREATE TABLE otp_codigo (

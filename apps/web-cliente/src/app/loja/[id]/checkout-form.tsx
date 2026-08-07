@@ -152,7 +152,7 @@ function CheckoutLogado({
           {enderecos?.length === 0 && (
             <p className="text-sm text-gray-600">
               Nenhum endereço salvo.{" "}
-              <Link href="/perfil" className="text-red-600 underline">
+              <Link href={`/perfil?redirect=/loja/${idLoja}`} className="text-red-600 underline">
                 Cadastrar endereço
               </Link>
             </p>

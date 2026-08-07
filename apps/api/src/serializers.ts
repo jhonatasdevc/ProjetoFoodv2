@@ -4,6 +4,7 @@ import type {
   Categoria,
   Cupom,
   Endereco,
+  Favorito,
   Grupo,
   Item,
   ItemComplemento,
@@ -87,6 +88,19 @@ export function serializeStory(story: { id: number; imagemUrl: string; criadoEm:
     id: story.id,
     imagemUrl: story.imagemUrl,
     criadoEm: story.criadoEm.toISOString(),
+  };
+}
+
+export function serializeFavorito(f: {
+  idLoja: number;
+  criadoEm: Date;
+  loja: { nome: string; imagemUrl: string | null };
+}): Favorito {
+  return {
+    idLoja: f.idLoja,
+    lojaNome: f.loja.nome,
+    lojaImagemUrl: f.loja.imagemUrl,
+    criadoEm: f.criadoEm.toISOString(),
   };
 }
 

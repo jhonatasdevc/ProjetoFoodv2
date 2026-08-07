@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Endereco } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
@@ -10,6 +11,8 @@ const ENDERECO_VAZIO = { cep: "", cidade: "", estado: "", rua: "", numero: "", c
 
 function PerfilContent() {
   const { auth } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [nome, setNome] = useState(auth?.usuario.nome ?? "");
   const [sobrenome, setSobrenome] = useState(auth?.usuario.sobrenome ?? "");
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
@@ -53,6 +56,12 @@ function PerfilContent() {
       });
       setNovoEndereco(ENDERECO_VAZIO);
       carregarEnderecos();
+      // Veio do checkout (sem endereço ainda) — volta pra loja com o carrinho reaberto
+      // em vez de deixar o usuário perdido na tela de perfil.
+      const redirect = searchParams.get("redirect");
+      if (redirect) {
+        router.push(`${redirect}?abrirCarrinho=1`);
+      }
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro ao adicionar endereço");
     }
@@ -72,33 +81,7 @@ function PerfilContent() {
 
   return (
     <main className="flex-1 p-6 max-w-lg mx-auto w-full space-y-8">
-      <section>
-        <h1 className="text-xl font-bold text-red-600 mb-4">Meu perfil</h1>
-        <form onSubmit={handleSalvarPerfil} className="space-y-3">
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Nome</label>
-            <input required value={nome} onChange={(e) => setNome(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Sobrenome</label>
-            <input
-              required
-              value={sobrenome}
-              onChange={(e) => setSobrenome(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
-          </div>
-          <p className="text-sm text-gray-500">Celular: {auth?.usuario.telefone}</p>
-          {mensagem && <p className="text-sm text-green-700">{mensagem}</p>}
-          <button
-            type="submit"
-            disabled={salvandoPerfil}
-            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
-          >
-            {salvandoPerfil ? "Salvando..." : "Salvar perfil"}
-          </button>
-        </form>
-      </section>
+      <h1 className="text-xl font-bold text-red-600 mb-2">Meu perfil</h1>
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Meus endereços</h2>
@@ -189,6 +172,34 @@ function PerfilContent() {
           {erro && <p className="text-sm text-red-600">{erro}</p>}
           <button type="submit" className="bg-green-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-green-700">
             + Adicionar endereço
+          </button>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Meus dados</h2>
+        <form onSubmit={handleSalvarPerfil} className="space-y-3">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Nome</label>
+            <input required value={nome} onChange={(e) => setNome(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Sobrenome</label>
+            <input
+              required
+              value={sobrenome}
+              onChange={(e) => setSobrenome(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+          <p className="text-sm text-gray-500">Celular: {auth?.usuario.telefone}</p>
+          {mensagem && <p className="text-sm text-green-700">{mensagem}</p>}
+          <button
+            type="submit"
+            disabled={salvandoPerfil}
+            className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+          >
+            {salvandoPerfil ? "Salvando..." : "Salvar perfil"}
           </button>
         </form>
       </section>

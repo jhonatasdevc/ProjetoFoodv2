@@ -5,6 +5,7 @@ import type {
   CriarPedidoInput,
   Cupom,
   Endereco,
+  Favorito,
   Grupo,
   Pedido,
   SolicitarOtpInput,
@@ -98,4 +99,16 @@ export function getMeusPedidos(token: string): Promise<Pedido[]> {
 
 export function getStories(): Promise<StoriesLoja[]> {
   return request("/api/stories", null);
+}
+
+export function listFavoritos(token: string): Promise<Favorito[]> {
+  return request("/api/usuarios/me/favoritos", token);
+}
+
+export function favoritarLoja(token: string, idLoja: number): Promise<Favorito> {
+  return request("/api/usuarios/me/favoritos", token, { method: "POST", body: JSON.stringify({ idLoja }) });
+}
+
+export function desfavoritarLoja(token: string, idLoja: number): Promise<void> {
+  return request(`/api/usuarios/me/favoritos/${idLoja}`, token, { method: "DELETE" });
 }

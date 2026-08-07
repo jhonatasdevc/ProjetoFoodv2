@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { assinarTokenUsuario, exigirAuthUsuario } from "../auth.js";
-import { serializeEndereco, serializeUsuario } from "../serializers.js";
+import { serializeEndereco, serializeFavorito, serializeUsuario } from "../serializers.js";
 
 const OTP_VALIDADE_MINUTOS = 5;
 
@@ -19,6 +19,8 @@ const perfilSchema = z.object({
   nome: z.string().min(1).optional(),
   sobrenome: z.string().min(1).optional(),
 });
+
+const favoritoSchema = z.object({ idLoja: z.number().int().positive() });
 
 const enderecoSchema = z.object({
   cep: z.string().min(1),
@@ -150,6 +152,34 @@ export default async function usuarioRoutes(app: FastifyInstance) {
       return reply.code(404).send({ erro: "Endereço não encontrado" });
     }
     await prisma.endereco.delete({ where: { id } });
+    return reply.code(204).send();
+  });
+
+  app.get("/usuarios/me/favoritos", { preHandler: exigirAuthUsuario }, async (req) => {
+    const favoritos = await prisma.favorito.findMany({
+      where: { idUsuario: req.usuario!.idUsuario },
+      include: { loja: { select: { nome: true, imagemUrl: true } } },
+      orderBy: { criadoEm: "desc" },
+    });
+    return favoritos.map(serializeFavorito);
+  });
+
+  app.post("/usuarios/me/favoritos", { preHandler: exigirAuthUsuario }, async (req, reply) => {
+    const parsed = favoritoSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+
+    const favorito = await prisma.favorito.upsert({
+      where: { idUsuario_idLoja: { idUsuario: req.usuario!.idUsuario, idLoja: parsed.data.idLoja } },
+      create: { idUsuario: req.usuario!.idUsuario, idLoja: parsed.data.idLoja },
+      update: {},
+      include: { loja: { select: { nome: true, imagemUrl: true } } },
+    });
+    return reply.code(201).send(serializeFavorito(favorito));
+  });
+
+  app.delete("/usuarios/me/favoritos/:idLoja", { preHandler: exigirAuthUsuario }, async (req, reply) => {
+    const idLoja = Number((req.params as { idLoja: string }).idLoja);
+    await prisma.favorito.deleteMany({ where: { idUsuario: req.usuario!.idUsuario, idLoja } });
     return reply.code(204).send();
   });
 }

@@ -59,14 +59,21 @@ function StoriesContent() {
         publicados. Máx. 5MB por imagem.
       </p>
 
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        onChange={handleEscolherArquivo}
-        disabled={enviando}
-        className="block text-sm mb-2"
-      />
-      {enviando && <p className="text-sm text-gray-400">Enviando...</p>}
+      <label
+        className={`inline-flex items-center gap-2 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-700 cursor-pointer transition-colors ${
+          enviando ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <span aria-hidden>+</span>
+        {enviando ? "Enviando..." : "Adicionar story"}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleEscolherArquivo}
+          disabled={enviando}
+          className="hidden"
+        />
+      </label>
       {erro && <p className="text-sm text-red-600">{erro}</p>}
 
       <div className="grid grid-cols-3 gap-4 mt-6">

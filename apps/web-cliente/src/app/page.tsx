@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Loja, Pedido } from "@delivery/shared";
+import type { Favorito, Loja, Pedido } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
-import { getGrupos, getMeusPedidos } from "@/lib/api";
+import { getGrupos, getMeusPedidos, listFavoritos } from "@/lib/api";
 import { StoriesRow } from "@/components/stories-row";
 
 function saudacao() {
@@ -12,18 +12,6 @@ function saudacao() {
   if (hora >= 5 && hora < 12) return "Bom dia";
   if (hora >= 12 && hora < 18) return "Boa tarde";
   return "Boa noite";
-}
-
-function ultimasLojas(pedidos: Pedido[]) {
-  const vistos = new Set<number>();
-  const resultado: Pedido[] = [];
-  for (const p of pedidos) {
-    if (vistos.has(p.idLoja)) continue;
-    vistos.add(p.idLoja);
-    resultado.push(p);
-    if (resultado.length === 4) break;
-  }
-  return resultado;
 }
 
 const CORES_CARD = [
@@ -62,21 +50,79 @@ function RestaurantesRow({ lojas }: { lojas: Loja[] }) {
   );
 }
 
+// Cards pequenos e retangulares (paisagem), mesmo estilo visual do card de perfil da loja
+// (imagem de fundo + gradiente + nome sobreposto), só que num formato mais compacto.
+function UltimosPedidosRow({ pedidos, lojas }: { pedidos: Pedido[]; lojas: Loja[] }) {
+  if (pedidos.length === 0) return null;
+  const ultimos = pedidos.slice(0, 5);
+  return (
+    <section className="mb-8 -mx-4">
+      <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Últimos Pedidos</h2>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
+        {ultimos.map((p) => {
+          const loja = lojas.find((l) => l.id === p.idLoja);
+          return (
+            <Link key={p.id} href={`/loja/${p.idLoja}`} className="shrink-0 w-40 snap-start">
+              <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-gray-500 to-gray-700">
+                {loja?.imagemUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={loja.imagemUrl} alt={p.lojaNome} className="absolute inset-0 w-full h-full object-cover" />
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/80 to-transparent" />
+                <span className="absolute left-2 right-2 bottom-2 text-white font-semibold text-xs leading-tight truncate">
+                  {p.lojaNome}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function FavoritosRow({ favoritos }: { favoritos: Favorito[] }) {
+  if (favoritos.length === 0) return null;
+  return (
+    <section className="mb-8 -mx-4">
+      <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Favoritos</h2>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
+        {favoritos.map((f, i) => (
+          <Link key={f.idLoja} href={`/loja/${f.idLoja}`} className="shrink-0 w-36 snap-start">
+            <div
+              className={`relative w-36 h-44 rounded-lg overflow-hidden bg-gradient-to-br ${CORES_CARD[i % CORES_CARD.length]}`}
+            >
+              {f.lojaImagemUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={f.lojaImagemUrl} alt={f.lojaNome} className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent" />
+              <span className="absolute left-2 right-2 bottom-2 text-white font-semibold text-sm leading-tight">
+                {f.lojaNome}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const { auth } = useAuth();
   const [pedidos, setPedidos] = useState<Pedido[] | null>(null);
   const [lojas, setLojas] = useState<Loja[]>([]);
+  const [favoritos, setFavoritos] = useState<Favorito[]>([]);
 
   useEffect(() => {
     if (!auth) return;
     getMeusPedidos(auth.token).then(setPedidos);
+    listFavoritos(auth.token).then(setFavoritos);
   }, [auth]);
 
   useEffect(() => {
     getGrupos().then((grupos) => setLojas(grupos.flatMap((g) => g.lojas)));
   }, []);
-
-  const lojasRecentes = pedidos ? ultimasLojas(pedidos) : [];
 
   return (
     <main className="flex-1 max-w-2xl mx-auto w-full p-4">
@@ -93,28 +139,15 @@ export default function Home() {
 
       <StoriesRow />
 
-      {auth && lojasRecentes.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-green-700 mb-3">Últimas Lojas</h2>
-          <div className="space-y-2">
-            {lojasRecentes.map((p) => (
-              <Link
-                key={p.idLoja}
-                href={`/loja/${p.idLoja}`}
-                className="block border border-red-100 rounded-lg p-4 hover:bg-red-50"
-              >
-                <p className="font-semibold text-gray-900">{p.lojaNome}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <RestaurantesRow lojas={lojas} />
 
-      {auth && pedidos !== null && lojasRecentes.length === 0 && (
+      <UltimosPedidosRow pedidos={pedidos ?? []} lojas={lojas} />
+
+      {auth && pedidos !== null && pedidos.length === 0 && (
         <p className="text-gray-500 text-sm mb-6">Você ainda não fez nenhum pedido. Explore restaurantes na aba Buscar.</p>
       )}
 
-      <RestaurantesRow lojas={lojas} />
+      <FavoritosRow favoritos={favoritos} />
     </main>
   );
 }

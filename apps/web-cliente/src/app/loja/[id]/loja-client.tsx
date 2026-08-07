@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { CardapioResponse } from "@delivery/shared";
 import { getCardapio } from "@/lib/api";
 import { CartProvider, useCart } from "@/lib/cart-context";
+import { useFavoritoLoja } from "@/lib/use-favorito";
 import { ItemCard } from "./item-card";
 import { CheckoutForm } from "./checkout-form";
 
@@ -14,6 +16,18 @@ function formatBRL(v: number) {
 function CartBar({ idLoja }: { idLoja: number }) {
   const { itemCount, total } = useCart();
   const [checkoutAberto, setCheckoutAberto] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Volta do fluxo "cadastrar endereço" (a partir do checkout, sem endereço salvo ainda)
+  // — reabre o carrinho automaticamente em vez de deixar o usuário ter que adicionar tudo de novo.
+  useEffect(() => {
+    if (searchParams.get("abrirCarrinho") === "1") {
+      setCheckoutAberto(true);
+      router.replace(pathname);
+    }
+  }, [searchParams, router, pathname]);
 
   if (itemCount === 0) return null;
 
@@ -35,6 +49,32 @@ function CartBar({ idLoja }: { idLoja: number }) {
   );
 }
 
+function BotaoFavoritar({ idLoja }: { idLoja: number }) {
+  const router = useRouter();
+  const { favoritado, alternar, carregando, logado } = useFavoritoLoja(idLoja);
+
+  function handleClick() {
+    if (!logado) {
+      router.push(`/login?redirect=/loja/${idLoja}`);
+      return;
+    }
+    alternar();
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={carregando}
+      className={`shrink-0 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border disabled:opacity-50 ${
+        favoritado ? "bg-red-600 border-red-600 text-white" : "bg-white border-gray-300 text-gray-700 hover:border-red-400"
+      }`}
+    >
+      <span aria-hidden>{favoritado ? "♥" : "♡"}</span>
+      {favoritado ? "Favoritado" : "Salvar Favoritos"}
+    </button>
+  );
+}
+
 function Cardapio({ data }: { data: CardapioResponse }) {
   return (
     <div className="max-w-2xl mx-auto pb-40">
@@ -42,9 +82,12 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={data.loja.imagemUrl} alt={data.loja.nome} className="w-full h-40 object-cover" />
       )}
-      <header className="mb-6 p-4 pb-0">
-        <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
-        {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
+      <header className="mb-6 p-4 pb-0 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
+          {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
+        </div>
+        <BotaoFavoritar idLoja={data.loja.id} />
       </header>
 
       <div className="px-4">

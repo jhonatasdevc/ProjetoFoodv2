@@ -293,7 +293,16 @@ export interface NovoStoryInput {
   imagemUrl: string;
 }
 
+export interface Favorito {
+  idLoja: number;
+  lojaNome: string;
+  lojaImagemUrl: string | null;
+  criadoEm: string;
+}
+
 export const SOCKET_EVENTS = {
   PEDIDO_CRIADO: "pedido:criado",
   PEDIDO_ATUALIZADO: "pedido:atualizado",
 } as const;
+
+
