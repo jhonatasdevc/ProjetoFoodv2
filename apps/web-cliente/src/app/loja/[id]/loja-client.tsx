@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { CardapioResponse } from "@delivery/shared";
+import type { CardapioResponse, TipoEntrega } from "@delivery/shared";
 import { getCardapio } from "@/lib/api";
 import { CartProvider, useCart } from "@/lib/cart-context";
 import { useFavoritoLoja } from "@/lib/use-favorito";
@@ -13,7 +13,17 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function CartBar({ idLoja, freteGratis, valorFrete }: { idLoja: number; freteGratis: boolean; valorFrete: number | null }) {
+function CartBar({
+  idLoja,
+  tipoEntrega,
+  valorFrete,
+  enderecoLoja,
+}: {
+  idLoja: number;
+  tipoEntrega: TipoEntrega;
+  valorFrete: number | null;
+  enderecoLoja: string | null;
+}) {
   const { itemCount, total } = useCart();
   const [checkoutAberto, setCheckoutAberto] = useState(false);
   const searchParams = useSearchParams();
@@ -47,8 +57,9 @@ function CartBar({ idLoja, freteGratis, valorFrete }: { idLoja: number; freteGra
       {checkoutAberto && (
         <CheckoutForm
           idLoja={idLoja}
-          freteGratis={freteGratis}
+          tipoEntrega={tipoEntrega}
           valorFrete={valorFrete}
+          enderecoLoja={enderecoLoja}
           onClose={() => setCheckoutAberto(false)}
         />
       )}
@@ -94,11 +105,11 @@ function Cardapio({ data }: { data: CardapioResponse }) {
           <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
           {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
           <p className="text-sm text-green-700 mt-1">
-            {data.loja.freteGratis
-              ? "Frete grátis"
-              : data.loja.valorFrete != null
-                ? `Frete ${formatBRL(data.loja.valorFrete)}`
-                : null}
+            {data.loja.tipoEntrega === "gratis" && "Frete grátis"}
+            {data.loja.tipoEntrega === "retirada" && "Clique e retire — sem entrega"}
+            {data.loja.tipoEntrega === "pago" &&
+              data.loja.valorFrete != null &&
+              `Frete ${formatBRL(data.loja.valorFrete)}`}
           </p>
         </div>
         <BotaoFavoritar idLoja={data.loja.id} />
@@ -117,7 +128,12 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         ))}
       </div>
 
-      <CartBar idLoja={data.loja.id} freteGratis={data.loja.freteGratis} valorFrete={data.loja.valorFrete} />
+      <CartBar
+        idLoja={data.loja.id}
+        tipoEntrega={data.loja.tipoEntrega}
+        valorFrete={data.loja.valorFrete}
+        enderecoLoja={data.loja.endereco}
+      />
     </div>
   );
 }

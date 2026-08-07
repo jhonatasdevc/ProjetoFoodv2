@@ -55,10 +55,11 @@ CREATE TABLE loja (
   endereco           VARCHAR(200),
   imagem_url         VARCHAR(300),
   imagem_perfil_url  VARCHAR(300),
-  frete_gratis       BOOLEAN NOT NULL DEFAULT false,
+  tipo_entrega       VARCHAR(20) NOT NULL DEFAULT 'pago',
   valor_frete        NUMERIC(10,2),
   ativo              BOOLEAN NOT NULL DEFAULT false,
-  criado_em          TIMESTAMP NOT NULL DEFAULT now()
+  criado_em          TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT loja_tipo_entrega_check CHECK (tipo_entrega IN ('gratis','pago','retirada'))
 );
 
 -- Story some sozinho das consultas 24h depois de criado (filtro por criado_em nas rotas).
@@ -171,6 +172,7 @@ CREATE TABLE pedido (
   total             NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_desconto    NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_frete       NUMERIC(10,2) NOT NULL DEFAULT 0,
+  tipo_entrega      VARCHAR(20) NOT NULL DEFAULT 'pago',
   observacoes       TEXT,
   criado_em         TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em     TIMESTAMP NOT NULL DEFAULT now(),
@@ -228,13 +230,13 @@ INSERT INTO admin (nome, email, senha_hash) VALUES
 
 -- Lojas de exemplo já nascem desbloqueadas (ativo=true) e com frete configurado — só as
 -- lojas cadastradas pelo admin de verdade nascem bloqueadas (default da coluna).
-INSERT INTO loja (id_grupo, nome, email, senha_hash, telefone, endereco, imagem_url, imagem_perfil_url, frete_gratis, valor_frete, ativo) VALUES
-  (1, 'Pizzaria do Zé', 'ze@pizzaria.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11999998888', 'Rua das Pizzas, 100', 'https://picsum.photos/seed/pizzaria-do-ze/480/600', 'https://picsum.photos/seed/pizzaria-do-ze-perfil/200/200', false, 6.00, true),
-  (2, 'Burger House', 'contato@burgerhouse.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11988887777', 'Av. dos Hambúrgueres, 200', 'https://picsum.photos/seed/burger-house/480/600', 'https://picsum.photos/seed/burger-house-perfil/200/200', true, null, true),
-  (3, 'Sushi Kazu', 'contato@sushikazu.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11977776666', 'Rua Japão, 300', 'https://picsum.photos/seed/sushi-kazu/480/600', 'https://picsum.photos/seed/sushi-kazu-perfil/200/200', false, 9.90, true),
-  (4, 'Doce Sonho', 'contato@docesonho.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11966665555', 'Rua das Sobremesas, 400', 'https://picsum.photos/seed/doce-sonho/480/600', 'https://picsum.photos/seed/doce-sonho-perfil/200/200', true, null, true),
-  (5, 'Sabor Caseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600', 'https://picsum.photos/seed/sabor-caseiro-perfil/200/200', false, 5.50, true),
-  (6, 'Verde Vida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600', 'https://picsum.photos/seed/verde-vida-perfil/200/200', true, null, true);
+INSERT INTO loja (id_grupo, nome, email, senha_hash, telefone, endereco, imagem_url, imagem_perfil_url, tipo_entrega, valor_frete, ativo) VALUES
+  (1, 'Pizzaria do Zé', 'ze@pizzaria.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11999998888', 'Rua das Pizzas, 100', 'https://picsum.photos/seed/pizzaria-do-ze/480/600', 'https://picsum.photos/seed/pizzaria-do-ze-perfil/200/200', 'pago', 6.00, true),
+  (2, 'Burger House', 'contato@burgerhouse.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11988887777', 'Av. dos Hambúrgueres, 200', 'https://picsum.photos/seed/burger-house/480/600', 'https://picsum.photos/seed/burger-house-perfil/200/200', 'gratis', null, true),
+  (3, 'Sushi Kazu', 'contato@sushikazu.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11977776666', 'Rua Japão, 300', 'https://picsum.photos/seed/sushi-kazu/480/600', 'https://picsum.photos/seed/sushi-kazu-perfil/200/200', 'pago', 9.90, true),
+  (4, 'Doce Sonho', 'contato@docesonho.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11966665555', 'Rua das Sobremesas, 400', 'https://picsum.photos/seed/doce-sonho/480/600', 'https://picsum.photos/seed/doce-sonho-perfil/200/200', 'retirada', null, true),
+  (5, 'Sabor Caseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600', 'https://picsum.photos/seed/sabor-caseiro-perfil/200/200', 'pago', 5.50, true),
+  (6, 'Verde Vida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600', 'https://picsum.photos/seed/verde-vida-perfil/200/200', 'gratis', null, true);
 
 INSERT INTO categoria (id_loja, nome, ordem) VALUES
   (1, 'Pizzas', 1),

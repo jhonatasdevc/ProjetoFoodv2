@@ -14,6 +14,7 @@ import type {
   PedidoItemComplemento,
   PedidoStatus,
   Story,
+  TipoEntrega,
   Usuario,
 } from "@delivery/shared";
 
@@ -28,7 +29,7 @@ export function serializeLoja(loja: {
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
-  freteGratis: boolean;
+  tipoEntrega: string;
   valorFrete: Prisma.Decimal | number | null;
   ativo: boolean;
 }): Loja {
@@ -41,7 +42,7 @@ export function serializeLoja(loja: {
     endereco: loja.endereco,
     imagemUrl: loja.imagemUrl,
     imagemPerfilUrl: loja.imagemPerfilUrl,
-    freteGratis: loja.freteGratis,
+    tipoEntrega: loja.tipoEntrega as TipoEntrega,
     valorFrete: loja.valorFrete != null ? num(loja.valorFrete) : null,
     ativo: loja.ativo,
   };
@@ -257,6 +258,7 @@ export function serializePedido(pedido: {
   total: Prisma.Decimal | number;
   valorDesconto: Prisma.Decimal | number;
   valorFrete: Prisma.Decimal | number;
+  tipoEntrega: string;
   observacoes: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
@@ -277,6 +279,7 @@ export function serializePedido(pedido: {
     total: num(pedido.total),
     valorDesconto: num(pedido.valorDesconto),
     valorFrete: num(pedido.valorFrete),
+    tipoEntrega: pedido.tipoEntrega as TipoEntrega,
     observacoes: pedido.observacoes,
     criadoEm: pedido.criadoEm.toISOString(),
     atualizadoEm: pedido.atualizadoEm.toISOString(),

@@ -20,6 +20,17 @@ export const PEDIDO_STATUS_LABEL: Record<PedidoStatus, string> = {
   cancelado: "Cancelado",
 };
 
+// gratis/pago = entrega pela loja (frete grátis ou com valor); retirada = "clique e retire",
+// cliente busca o pedido no endereço da loja (sem endereço de entrega no checkout).
+export type TipoEntrega = "gratis" | "pago" | "retirada";
+
+// Pro pedido de retirada, "saiu para entrega" não faz sentido — o rótulo vira "Pedido pronto"
+// (pronto pra o cliente buscar). Usado em qualquer tela que mostre o status de um pedido.
+export function labelStatusPedido(status: PedidoStatus, tipoEntrega: TipoEntrega): string {
+  if (tipoEntrega === "retirada" && status === "saiu_entrega") return "Pedido pronto";
+  return PEDIDO_STATUS_LABEL[status];
+}
+
 export interface Loja {
   id: number;
   idGrupo: number;
@@ -29,7 +40,7 @@ export interface Loja {
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
-  freteGratis: boolean;
+  tipoEntrega: TipoEntrega;
   valorFrete: number | null;
   ativo: boolean;
 }
@@ -37,7 +48,7 @@ export interface Loja {
 export interface AtualizarLojaInput {
   imagemUrl?: string | null;
   imagemPerfilUrl?: string | null;
-  freteGratis?: boolean;
+  tipoEntrega?: TipoEntrega;
   valorFrete?: number | null;
   ativo?: boolean;
 }
@@ -96,7 +107,7 @@ export interface PedidoItemInput {
 
 export interface CriarPedidoInput {
   idLoja: number;
-  idEndereco: number;
+  idEndereco?: number;
   cupomCodigo?: string;
   formaPagamento: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito";
   observacoes?: string;
@@ -135,6 +146,7 @@ export interface Pedido {
   total: number;
   valorDesconto: number;
   valorFrete: number;
+  tipoEntrega: TipoEntrega;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;

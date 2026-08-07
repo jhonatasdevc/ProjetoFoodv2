@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PEDIDO_STATUS_LABEL, PEDIDO_STATUS_ORDER, type Pedido } from "@delivery/shared";
+import { labelStatusPedido, PEDIDO_STATUS_ORDER, type Pedido } from "@delivery/shared";
 import { getPedido } from "@/lib/api";
 
 function formatBRL(v: number) {
@@ -47,7 +47,7 @@ export function PedidoClient({ idPedido }: { idPedido: string }) {
               <span
                 className={`w-3 h-3 rounded-full ${i <= passoAtual ? "bg-green-600" : "bg-gray-300"}`}
               />
-              {PEDIDO_STATUS_LABEL[status]}
+              {labelStatusPedido(status, pedido.tipoEntrega)}
             </li>
           ))}
         </ol>

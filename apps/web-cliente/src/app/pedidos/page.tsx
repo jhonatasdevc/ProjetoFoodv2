@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PEDIDO_STATUS_LABEL, type Pedido } from "@delivery/shared";
+import { labelStatusPedido, type Pedido } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { getMeusPedidos } from "@/lib/api";
@@ -38,7 +38,7 @@ function PedidosContent() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-semibold text-gray-900">{pedido.lojaNome}</p>
-                <p className="text-sm text-green-700">{PEDIDO_STATUS_LABEL[pedido.status]}</p>
+                <p className="text-sm text-green-700">{labelStatusPedido(pedido.status, pedido.tipoEntrega)}</p>
               </div>
               <p className="text-gray-600 text-sm">{formatBRL(pedido.total)}</p>
             </div>

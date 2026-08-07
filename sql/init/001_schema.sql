@@ -44,10 +44,11 @@ CREATE TABLE loja (
   endereco           VARCHAR(200),
   imagem_url         VARCHAR(300),
   imagem_perfil_url  VARCHAR(300),
-  frete_gratis       BOOLEAN NOT NULL DEFAULT false,
+  tipo_entrega       VARCHAR(20) NOT NULL DEFAULT 'pago',
   valor_frete        NUMERIC(10,2),
   ativo              BOOLEAN NOT NULL DEFAULT false,
-  criado_em          TIMESTAMP NOT NULL DEFAULT now()
+  criado_em          TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT loja_tipo_entrega_check CHECK (tipo_entrega IN ('gratis','pago','retirada'))
 );
 
 -- Story some sozinho das consultas 24h depois de criado (filtro por criado_em nas rotas).
@@ -160,6 +161,7 @@ CREATE TABLE pedido (
   total             NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_desconto    NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_frete       NUMERIC(10,2) NOT NULL DEFAULT 0,
+  tipo_entrega      VARCHAR(20) NOT NULL DEFAULT 'pago',
   observacoes       TEXT,
   criado_em         TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em     TIMESTAMP NOT NULL DEFAULT now(),

@@ -9,7 +9,7 @@ import { validarCupom } from "./cupom.js";
 
 const criarPedidoSchema = z.object({
   idLoja: z.number().int(),
-  idEndereco: z.number().int(),
+  idEndereco: z.number().int().optional(),
   cupomCodigo: z.string().optional(),
   formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito"]),
   observacoes: z.string().optional(),
@@ -53,9 +53,15 @@ export default async function pedidoRoutes(app: FastifyInstance) {
     const loja = await prisma.loja.findUnique({ where: { id: input.idLoja } });
     if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
 
-    const endereco = await prisma.endereco.findUnique({ where: { id: input.idEndereco } });
-    if (!endereco || endereco.idUsuario !== usuario.id) {
-      return reply.code(403).send({ erro: "Endereço inválido" });
+    const retirada = loja.tipoEntrega === "retirada";
+
+    let endereco: Awaited<ReturnType<typeof prisma.endereco.findUnique>> = null;
+    if (!retirada) {
+      if (!input.idEndereco) return reply.code(400).send({ erro: "Endereço é obrigatório" });
+      endereco = await prisma.endereco.findUnique({ where: { id: input.idEndereco } });
+      if (!endereco || endereco.idUsuario !== usuario.id) {
+        return reply.code(403).send({ erro: "Endereço inválido" });
+      }
     }
 
     const idsItens = input.itens.map((i) => i.idItem);
@@ -100,15 +106,17 @@ export default async function pedidoRoutes(app: FastifyInstance) {
       valorDesconto = Math.min(resultado.valorDesconto, total);
     }
 
-    const enderecoTexto = `${endereco.rua}, ${endereco.numero}${endereco.complemento ? ` - ${endereco.complemento}` : ""} - ${endereco.cidade}/${endereco.estado} - CEP ${endereco.cep}`;
+    const enderecoTexto = retirada
+      ? `Retirada no local — ${loja.endereco ?? loja.nome}`
+      : `${endereco!.rua}, ${endereco!.numero}${endereco!.complemento ? ` - ${endereco!.complemento}` : ""} - ${endereco!.cidade}/${endereco!.estado} - CEP ${endereco!.cep}`;
 
-    const valorFrete = loja.freteGratis ? 0 : Number(loja.valorFrete ?? 0);
+    const valorFrete = loja.tipoEntrega === "pago" ? Number(loja.valorFrete ?? 0) : 0;
 
     const pedido = await prisma.pedido.create({
       data: {
         idLoja: input.idLoja,
         idUsuario: usuario.id,
-        idEndereco: endereco.id,
+        idEndereco: endereco?.id,
         idCupom,
         clienteNome: `${usuario.nome} ${usuario.sobrenome}`,
         clienteTelefone: usuario.telefone,
@@ -118,6 +126,7 @@ export default async function pedidoRoutes(app: FastifyInstance) {
         total: total - valorDesconto + valorFrete,
         valorDesconto,
         valorFrete,
+        tipoEntrega: loja.tipoEntrega,
         itens: { create: pedidoItensData },
         statusHistorico: { create: { status: "recebido" } },
       },

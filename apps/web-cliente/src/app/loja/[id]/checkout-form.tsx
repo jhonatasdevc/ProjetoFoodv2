@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { CriarPedidoInput, Endereco } from "@delivery/shared";
+import type { CriarPedidoInput, Endereco, TipoEntrega } from "@delivery/shared";
 import { criarPedido, listEnderecos, validarCupom } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useCart, type CartLine } from "@/lib/cart-context";
@@ -78,13 +78,15 @@ function ItensCarrinho({
 
 export function CheckoutForm({
   idLoja,
-  freteGratis,
+  tipoEntrega,
   valorFrete,
+  enderecoLoja,
   onClose,
 }: {
   idLoja: number;
-  freteGratis: boolean;
+  tipoEntrega: TipoEntrega;
   valorFrete: number | null;
+  enderecoLoja: string | null;
   onClose: () => void;
 }) {
   const { auth } = useAuth();
@@ -117,8 +119,9 @@ export function CheckoutForm({
   return (
     <CheckoutLogado
       idLoja={idLoja}
-      freteGratis={freteGratis}
+      tipoEntrega={tipoEntrega}
       valorFrete={valorFrete}
+      enderecoLoja={enderecoLoja}
       onClose={onClose}
       token={auth.token}
       lines={lines}
@@ -132,8 +135,9 @@ export function CheckoutForm({
 
 function CheckoutLogado({
   idLoja,
-  freteGratis,
+  tipoEntrega,
   valorFrete,
+  enderecoLoja,
   onClose,
   token,
   lines,
@@ -143,8 +147,9 @@ function CheckoutLogado({
   removeLine,
 }: {
   idLoja: number;
-  freteGratis: boolean;
+  tipoEntrega: TipoEntrega;
   valorFrete: number | null;
+  enderecoLoja: string | null;
   onClose: () => void;
   token: string;
   lines: CartLine[];
@@ -154,6 +159,7 @@ function CheckoutLogado({
   removeLine: (key: string) => void;
 }) {
   const router = useRouter();
+  const retirada = tipoEntrega === "retirada";
   const [enderecos, setEnderecos] = useState<Endereco[] | null>(null);
   const [idEndereco, setIdEndereco] = useState<number | null>(null);
   const [cupomInput, setCupomInput] = useState("");
@@ -166,11 +172,12 @@ function CheckoutLogado({
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    if (retirada) return;
     listEnderecos(token).then((resp) => {
       setEnderecos(resp);
       setIdEndereco(resp.find((e) => e.padrao)?.id ?? resp[0]?.id ?? null);
     });
-  }, [token]);
+  }, [token, retirada]);
 
   async function handleAplicarCupom() {
     if (!cupomInput.trim()) return;
@@ -192,18 +199,18 @@ function CheckoutLogado({
     }
   }
 
-  const valorFreteCobrado = freteGratis ? 0 : (valorFrete ?? 0);
+  const valorFreteCobrado = tipoEntrega === "pago" ? (valorFrete ?? 0) : 0;
   const totalComDesconto = total - (cupomAplicado?.valorDesconto ?? 0) + valorFreteCobrado;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!idEndereco) return;
+    if (!retirada && !idEndereco) return;
     setErro(null);
     setEnviando(true);
     try {
       const pedido = await criarPedido(token, {
         idLoja,
-        idEndereco,
+        idEndereco: retirada ? undefined : (idEndereco ?? undefined),
         cupomCodigo: cupomAplicado?.codigo,
         formaPagamento,
         observacoes: observacoes || undefined,
@@ -238,35 +245,42 @@ function CheckoutLogado({
 
         <ItensCarrinho lines={lines} changeQuantity={changeQuantity} removeLine={removeLine} />
 
-        <div>
-          <label className="block text-sm text-gray-700 mb-2">Endereço de entrega</label>
-          {enderecos === null && <p className="text-sm text-gray-500">Carregando endereços...</p>}
-          {enderecos?.length === 0 && (
-            <p className="text-sm text-gray-600">
-              Nenhum endereço salvo.{" "}
-              <Link href={`/perfil?redirect=/loja/${idLoja}`} className="text-red-600 underline">
-                Cadastrar endereço
-              </Link>
-            </p>
-          )}
-          <div className="space-y-2">
-            {enderecos?.map((e) => (
-              <label key={e.id} className="flex items-start gap-2 text-sm text-gray-700 border border-gray-200 rounded px-3 py-2">
-                <input
-                  type="radio"
-                  name="endereco"
-                  checked={idEndereco === e.id}
-                  onChange={() => setIdEndereco(e.id)}
-                  className="mt-1 accent-red-600"
-                />
-                <span>
-                  {e.rua}, {e.numero}
-                  {e.complemento ? ` - ${e.complemento}` : ""} — {e.cidade}/{e.estado}
-                </span>
-              </label>
-            ))}
+        {retirada ? (
+          <div className="border border-green-200 bg-green-50 rounded-lg p-3">
+            <p className="text-sm font-medium text-green-800">Clique e retire — sem entrega</p>
+            <p className="text-sm text-green-700 mt-0.5">Retirada em: {enderecoLoja ?? "endereço da loja"}</p>
           </div>
-        </div>
+        ) : (
+          <div>
+            <label className="block text-sm text-gray-700 mb-2">Endereço de entrega</label>
+            {enderecos === null && <p className="text-sm text-gray-500">Carregando endereços...</p>}
+            {enderecos?.length === 0 && (
+              <p className="text-sm text-gray-600">
+                Nenhum endereço salvo.{" "}
+                <Link href={`/perfil?redirect=/loja/${idLoja}`} className="text-red-600 underline">
+                  Cadastrar endereço
+                </Link>
+              </p>
+            )}
+            <div className="space-y-2">
+              {enderecos?.map((e) => (
+                <label key={e.id} className="flex items-start gap-2 text-sm text-gray-700 border border-gray-200 rounded px-3 py-2">
+                  <input
+                    type="radio"
+                    name="endereco"
+                    checked={idEndereco === e.id}
+                    onChange={() => setIdEndereco(e.id)}
+                    className="mt-1 accent-red-600"
+                  />
+                  <span>
+                    {e.rua}, {e.numero}
+                    {e.complemento ? ` - ${e.complemento}` : ""} — {e.cidade}/{e.estado}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm text-gray-700 mb-1">Cupom de desconto</label>
@@ -326,7 +340,7 @@ function CheckoutLogado({
           </div>
           <div className="flex justify-between text-gray-600">
             <span>Frete</span>
-            <span>{freteGratis ? "Grátis" : formatBRL(valorFreteCobrado)}</span>
+            <span>{retirada ? "Retirada no local" : tipoEntrega === "gratis" ? "Grátis" : formatBRL(valorFreteCobrado)}</span>
           </div>
           {cupomAplicado && (
             <div className="flex justify-between text-green-700">
@@ -344,7 +358,7 @@ function CheckoutLogado({
 
         <button
           type="submit"
-          disabled={enviando || !idEndereco}
+          disabled={enviando || (!retirada && !idEndereco)}
           className="w-full bg-red-600 text-white font-semibold py-3 rounded hover:bg-red-700 disabled:opacity-50"
         >
           {enviando ? "Enviando..." : `Confirmar pedido — ${formatBRL(totalComDesconto)}`}

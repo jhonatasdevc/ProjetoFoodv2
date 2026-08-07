@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { PEDIDO_STATUS_LABEL, type Pedido, type PedidoStatus } from "@delivery/shared";
+import { labelStatusPedido, PEDIDO_STATUS_LABEL, type Pedido, type PedidoStatus } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { avancarStatusPedido, listPedidos } from "@/lib/api";
@@ -116,7 +116,7 @@ function PedidosContent() {
                     onClick={() => handleAvancar(pedido)}
                     className="bg-green-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-green-700"
                   >
-                    Avançar para {PEDIDO_STATUS_LABEL[PROXIMO_STATUS[pedido.status]!]}
+                    Avançar para {labelStatusPedido(PROXIMO_STATUS[pedido.status]!, pedido.tipoEntrega)}
                   </button>
                   <button
                     onClick={() => handleCancelar(pedido)}

@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { TipoEntrega } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { atualizarLojaMe, uploadImagem } from "@/lib/api";
 
-function requisitosFaltando(loja: { imagemUrl: string | null; imagemPerfilUrl: string | null; freteGratis: boolean; valorFrete: number | null }) {
+function requisitosFaltando(loja: { imagemUrl: string | null; imagemPerfilUrl: string | null; tipoEntrega: TipoEntrega; valorFrete: number | null }) {
   const faltando: string[] = [];
   if (!loja.imagemUrl) faltando.push("foto de capa");
   if (!loja.imagemPerfilUrl) faltando.push("foto de perfil");
-  if (!loja.freteGratis && loja.valorFrete == null) faltando.push("frete (grátis ou com valor)");
+  if (loja.tipoEntrega === "pago" && loja.valorFrete == null) faltando.push("valor do frete");
   return faltando;
 }
 
@@ -130,7 +131,7 @@ function PerfilContent() {
   const { auth, atualizarLoja } = useAuth();
   const loja = auth!.loja;
 
-  const [freteGratis, setFreteGratis] = useState(loja.freteGratis);
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>(loja.tipoEntrega);
   const [valorFrete, setValorFrete] = useState(loja.valorFrete != null ? String(loja.valorFrete) : "");
   const [salvandoFrete, setSalvandoFrete] = useState(false);
   const [mensagemFrete, setMensagemFrete] = useState<string | null>(null);
@@ -149,8 +150,8 @@ function PerfilContent() {
     setSalvandoFrete(true);
     try {
       const nova = await atualizarLojaMe(auth.token, {
-        freteGratis,
-        valorFrete: freteGratis ? null : valorFrete ? Number(valorFrete) : null,
+        tipoEntrega,
+        valorFrete: tipoEntrega === "pago" ? (valorFrete ? Number(valorFrete) : null) : null,
       });
       atualizarLoja(nova);
       setMensagemFrete("Frete atualizado.");
@@ -225,19 +226,45 @@ function PerfilContent() {
       />
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Frete</h2>
-        <p className="text-sm text-gray-500 mb-4">Define se a entrega é grátis ou tem um valor fixo cobrado do cliente no carrinho.</p>
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Entrega</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Escolha como o cliente recebe o pedido: frete grátis, frete com valor fixo, ou clique e retire (cliente
+          busca no endereço da loja, sem cobrar entrega).
+        </p>
         <form onSubmit={handleSalvarFrete} className="space-y-3">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={freteGratis}
-              onChange={(e) => setFreteGratis(e.target.checked)}
-              className="accent-red-600"
-            />
-            Frete grátis
-          </label>
-          {!freteGratis && (
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="tipoEntrega"
+                checked={tipoEntrega === "gratis"}
+                onChange={() => setTipoEntrega("gratis")}
+                className="accent-red-600"
+              />
+              Frete grátis
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="tipoEntrega"
+                checked={tipoEntrega === "pago"}
+                onChange={() => setTipoEntrega("pago")}
+                className="accent-red-600"
+              />
+              Frete pago
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="tipoEntrega"
+                checked={tipoEntrega === "retirada"}
+                onChange={() => setTipoEntrega("retirada")}
+                className="accent-red-600"
+              />
+              Clique e retire (sem entrega)
+            </label>
+          </div>
+          {tipoEntrega === "pago" && (
             <div>
               <label className="block text-sm text-gray-700 mb-1">Valor do frete (R$)</label>
               <input
@@ -258,7 +285,7 @@ function PerfilContent() {
             disabled={salvandoFrete}
             className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
           >
-            {salvandoFrete ? "Salvando..." : "Salvar frete"}
+            {salvandoFrete ? "Salvando..." : "Salvar entrega"}
           </button>
         </form>
       </section>

@@ -13,7 +13,7 @@ const loginSchema = z.object({
 const atualizarLojaSchema = z.object({
   imagemUrl: z.string().url().nullable().optional(),
   imagemPerfilUrl: z.string().url().nullable().optional(),
-  freteGratis: z.boolean().optional(),
+  tipoEntrega: z.enum(["gratis", "pago", "retirada"]).optional(),
   valorFrete: z.number().positive().nullable().optional(),
   ativo: z.boolean().optional(),
 });
@@ -67,9 +67,10 @@ export default async function lojaRoutes(app: FastifyInstance) {
       const imagemUrl = parsed.data.imagemUrl !== undefined ? parsed.data.imagemUrl : atual.imagemUrl;
       const imagemPerfilUrl =
         parsed.data.imagemPerfilUrl !== undefined ? parsed.data.imagemPerfilUrl : atual.imagemPerfilUrl;
-      const freteGratis = parsed.data.freteGratis !== undefined ? parsed.data.freteGratis : atual.freteGratis;
+      const tipoEntrega = parsed.data.tipoEntrega !== undefined ? parsed.data.tipoEntrega : atual.tipoEntrega;
       const valorFrete = parsed.data.valorFrete !== undefined ? parsed.data.valorFrete : atual.valorFrete;
-      const freteConfigurado = freteGratis || valorFrete != null;
+      // "pago" exige um valor definido; "gratis"/"retirada" não precisam de valor nenhum.
+      const freteConfigurado = tipoEntrega !== "pago" || valorFrete != null;
 
       if (!atual.nome || !imagemUrl || !imagemPerfilUrl || !freteConfigurado) {
         return reply.code(400).send({
