@@ -3,9 +3,49 @@
 import { useEffect, useState } from "react";
 import { labelStatusPedido, PEDIDO_STATUS_ORDER, type Pedido } from "@delivery/shared";
 import { getPedido } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { ativarNotificacoes, suportaPush } from "@/lib/push";
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function BotaoAtivarNotificacoes() {
+  const { auth } = useAuth();
+  const [estado, setEstado] = useState<"idle" | "ativando" | "ativado" | "erro">("idle");
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (suportaPush() && Notification.permission === "granted") setEstado("ativado");
+  }, []);
+
+  if (!auth || !suportaPush() || estado === "ativado") return null;
+
+  async function handleClick() {
+    if (!auth) return;
+    setEstado("ativando");
+    setErro(null);
+    try {
+      await ativarNotificacoes(auth.token);
+      setEstado("ativado");
+    } catch (err) {
+      setEstado("idle");
+      setErro(err instanceof Error ? err.message : "Erro ao ativar notificações");
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <button
+        onClick={handleClick}
+        disabled={estado === "ativando"}
+        className="text-sm text-red-600 font-medium border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50 disabled:opacity-50"
+      >
+        {estado === "ativando" ? "Ativando..." : "🔔 Ativar notificações"}
+      </button>
+      {erro && <p className="text-xs text-red-600 mt-1">{erro}</p>}
+    </div>
+  );
 }
 
 export function PedidoClient({ idPedido }: { idPedido: string }) {
@@ -41,16 +81,19 @@ export function PedidoClient({ idPedido }: { idPedido: string }) {
       {cancelado ? (
         <p className="mt-6 text-red-600 font-semibold">Pedido cancelado</p>
       ) : (
-        <ol className="mt-6 space-y-3">
-          {PEDIDO_STATUS_ORDER.map((status, i) => (
-            <li key={status} className={`flex items-center gap-3 ${i <= passoAtual ? "text-green-700" : "text-gray-400"}`}>
-              <span
-                className={`w-3 h-3 rounded-full ${i <= passoAtual ? "bg-green-600" : "bg-gray-300"}`}
-              />
-              {labelStatusPedido(status, pedido.tipoEntrega)}
-            </li>
-          ))}
-        </ol>
+        <>
+          <ol className="mt-6 space-y-3">
+            {PEDIDO_STATUS_ORDER.map((status, i) => (
+              <li key={status} className={`flex items-center gap-3 ${i <= passoAtual ? "text-green-700" : "text-gray-400"}`}>
+                <span
+                  className={`w-3 h-3 rounded-full ${i <= passoAtual ? "bg-green-600" : "bg-gray-300"}`}
+                />
+                {labelStatusPedido(status, pedido.tipoEntrega)}
+              </li>
+            ))}
+          </ol>
+          {pedido.status !== "entregue" && <BotaoAtivarNotificacoes />}
+        </>
       )}
 
       <div className="mt-8 border-t border-red-100 pt-4">

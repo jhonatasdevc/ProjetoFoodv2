@@ -122,6 +122,19 @@ CREATE TABLE favorito (
 
 CREATE INDEX idx_favorito_usuario ON favorito(id_usuario);
 
+-- Inscrição de push notification (Web Push) do navegador do cliente. Um usuário pode ter
+-- várias (um por navegador/dispositivo onde ativou notificações).
+CREATE TABLE push_subscription (
+  id              SERIAL PRIMARY KEY,
+  id_usuario      INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  endpoint        TEXT NOT NULL UNIQUE,
+  chave_p256dh    VARCHAR(200) NOT NULL,
+  chave_auth      VARCHAR(200) NOT NULL,
+  criado_em       TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_push_subscription_usuario ON push_subscription(id_usuario);
+
 -- Código de verificação por celular (OTP). Nesta versão o código é mockado:
 -- retornado na própria resposta da API em vez de enviado por SMS de verdade.
 CREATE TABLE otp_codigo (

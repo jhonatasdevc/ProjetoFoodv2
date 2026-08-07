@@ -12,11 +12,14 @@ import adminRoutes from "./routes/admin.js";
 import uploadRoutes from "./routes/upload.js";
 import storyRoutes from "./routes/story.js";
 import { initSocket } from "./socket.js";
+import { configurarWebPush } from "./push.js";
 
 const PORT = Number(process.env.API_PORT ?? 3333);
 const CORS_ORIGIN = (
   process.env.CORS_ORIGIN ?? "http://localhost:3001,http://localhost:3002,http://localhost:3003"
 ).split(",");
+
+configurarWebPush();
 
 const app = Fastify({ logger: true });
 

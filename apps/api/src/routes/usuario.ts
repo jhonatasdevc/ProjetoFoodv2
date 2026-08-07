@@ -22,6 +22,11 @@ const perfilSchema = z.object({
 
 const favoritoSchema = z.object({ idLoja: z.number().int().positive() });
 
+const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({ p256dh: z.string().min(1), auth: z.string().min(1) }),
+});
+
 const enderecoSchema = z.object({
   cep: z.string().min(1),
   cidade: z.string().min(1),
@@ -180,6 +185,39 @@ export default async function usuarioRoutes(app: FastifyInstance) {
   app.delete("/usuarios/me/favoritos/:idLoja", { preHandler: exigirAuthUsuario }, async (req, reply) => {
     const idLoja = Number((req.params as { idLoja: string }).idLoja);
     await prisma.favorito.deleteMany({ where: { idUsuario: req.usuario!.idUsuario, idLoja } });
+    return reply.code(204).send();
+  });
+
+  // Registra o navegador do cliente pra receber push notification (upsert por endpoint —
+  // o mesmo navegador pode reinscrever sem duplicar).
+  app.post("/usuarios/me/push", { preHandler: exigirAuthUsuario }, async (req, reply) => {
+    const parsed = pushSubscriptionSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: parsed.data.endpoint },
+      create: {
+        idUsuario: req.usuario!.idUsuario,
+        endpoint: parsed.data.endpoint,
+        chaveP256dh: parsed.data.keys.p256dh,
+        chaveAuth: parsed.data.keys.auth,
+      },
+      update: {
+        idUsuario: req.usuario!.idUsuario,
+        chaveP256dh: parsed.data.keys.p256dh,
+        chaveAuth: parsed.data.keys.auth,
+      },
+    });
+    return reply.code(201).send({ inscrito: true });
+  });
+
+  app.delete("/usuarios/me/push", { preHandler: exigirAuthUsuario }, async (req, reply) => {
+    const parsed = z.object({ endpoint: z.string().url() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+
+    await prisma.pushSubscription.deleteMany({
+      where: { idUsuario: req.usuario!.idUsuario, endpoint: parsed.data.endpoint },
+    });
     return reply.code(204).send();
   });
 }

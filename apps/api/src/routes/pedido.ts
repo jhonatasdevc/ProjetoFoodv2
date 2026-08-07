@@ -5,6 +5,7 @@ import { prisma } from "../prisma.js";
 import { exigirAuthLoja, exigirAuthUsuario } from "../auth.js";
 import { serializePedido } from "../serializers.js";
 import { emitirPedidoAtualizado, emitirPedidoCriado } from "../socket.js";
+import { enviarPushParaUsuario } from "../push.js";
 import { validarCupom } from "./cupom.js";
 
 const criarPedidoSchema = z.object({
@@ -200,6 +201,18 @@ export default async function pedidoRoutes(app: FastifyInstance) {
 
     const serializado = serializePedido(pedido);
     emitirPedidoAtualizado(pedido.idLoja, serializado);
+
+    if (novoStatus === "saiu_entrega") {
+      const retirada = pedido.tipoEntrega === "retirada";
+      enviarPushParaUsuario(pedido.idUsuario, {
+        titulo: retirada ? "Seu pedido está pronto! 🎉" : "Seu pedido saiu para entrega! 🛵",
+        corpo: retirada
+          ? `${pedido.loja.nome} — pode vir buscar.`
+          : `${pedido.loja.nome} — chegando em breve.`,
+        url: `/pedido/${pedido.id}`,
+      }).catch(() => {});
+    }
+
     return serializado;
   });
 }

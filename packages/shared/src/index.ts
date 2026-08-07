@@ -320,6 +320,15 @@ export interface Favorito {
   criadoEm: string;
 }
 
+// Espelha o formato de PushSubscription.toJSON() do navegador.
+export interface NovaPushSubscriptionInput {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export const SOCKET_EVENTS = {
   PEDIDO_CRIADO: "pedido:criado",
   PEDIDO_ATUALIZADO: "pedido:atualizado",

@@ -82,6 +82,7 @@ model Usuario {
   enderecos Endereco[]
   pedidos   Pedido[]
   favoritos Favorito[]
+  pushSubscriptions PushSubscription[]
 
   @@map("usuario")
 }
@@ -114,6 +115,18 @@ model Favorito {
 
   @@unique([idUsuario, idLoja])
   @@map("favorito")
+}
+
+model PushSubscription {
+  id          Int      @id @default(autoincrement())
+  idUsuario   Int      @map("id_usuario")
+  endpoint    String   @unique
+  chaveP256dh String   @map("chave_p256dh") @db.VarChar(200)
+  chaveAuth   String   @map("chave_auth") @db.VarChar(200)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  usuario     Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("push_subscription")
 }
 
 model OtpCodigo {
