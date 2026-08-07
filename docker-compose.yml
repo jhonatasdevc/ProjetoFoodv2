@@ -41,7 +41,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-delivery}:${DB_PASSWORD:-delivery123}@db:5432/${DB_NAME:-delivery_db}
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:-troque_esse_segredo_em_producao}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001,http://localhost:3002,http://localhost:3003}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pedidos.flowdevelop.com.br,https://loja.flowdevelop.com.br,https://admin.flowdevelop.com.br}
       NODE_ENV: production
     ports:
       - "3333:3333"           # API + Socket.io: http://localhost:3333 (local); no VPS o acesso público é via Traefik
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: apps/web-loja/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
     container_name: delivery_web_loja
     restart: unless-stopped
     environment:
@@ -90,7 +90,7 @@ services:
       context: .
       dockerfile: apps/web-cliente/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
     container_name: delivery_web_cliente
     restart: unless-stopped
     environment:
@@ -116,7 +116,7 @@ services:
       context: .
       dockerfile: apps/web-admin/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
     container_name: delivery_web_admin
     restart: unless-stopped
     environment:
