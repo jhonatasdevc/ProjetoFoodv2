@@ -34,7 +34,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile.dev
+      dockerfile: apps/api/Dockerfile
     container_name: delivery_api
     restart: unless-stopped
     environment:
@@ -42,7 +42,7 @@ services:
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:-troque_esse_segredo_em_producao}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001,http://localhost:3002,http://localhost:3003}
-      NODE_ENV: development
+      NODE_ENV: production
     ports:
       - "3333:3333"           # API + Socket.io: http://localhost:3333 (local); no VPS o acesso público é via Traefik
     depends_on:
@@ -62,7 +62,9 @@ services:
   web-loja:
     build:
       context: .
-      dockerfile: apps/web-loja/Dockerfile.dev
+      dockerfile: apps/web-loja/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
     container_name: delivery_web_loja
     restart: unless-stopped
     environment:
@@ -86,7 +88,9 @@ services:
   web-cliente:
     build:
       context: .
-      dockerfile: apps/web-cliente/Dockerfile.dev
+      dockerfile: apps/web-cliente/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
     container_name: delivery_web_cliente
     restart: unless-stopped
     environment:
@@ -110,7 +114,9 @@ services:
   web-admin:
     build:
       context: .
-      dockerfile: apps/web-admin/Dockerfile.dev
+      dockerfile: apps/web-admin/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
     container_name: delivery_web_admin
     restart: unless-stopped
     environment:
