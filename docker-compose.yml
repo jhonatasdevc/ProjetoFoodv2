@@ -102,7 +102,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-proxy
-      - traefik.http.routers.delivery-web-cliente.rule=Host(`${WEB_CLIENTE_DOMAIN:-cliente.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-cliente.rule=Host(`${WEB_CLIENTE_DOMAIN:-pedidos.flowdevelop.com.br}`)
       - traefik.http.routers.delivery-web-cliente.entrypoints=websecure
       - traefik.http.routers.delivery-web-cliente.tls.certresolver=letsencrypt
       - traefik.http.services.delivery-web-cliente.loadbalancer.server.port=3002
