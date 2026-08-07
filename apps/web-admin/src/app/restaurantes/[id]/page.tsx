@@ -103,8 +103,11 @@ function EditarLojaContent({ id }: { id: number }) {
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} className="accent-red-600" />
-          Loja ativa
+          Loja desbloqueada (visível pro cliente)
         </label>
+        <p className="text-xs text-gray-500 -mt-2">
+          Lojas novas nascem bloqueadas — a própria loja desbloqueia no painel dela depois de completar nome, fotos e frete.
+        </p>
 
         {erro && <p className="text-sm text-red-600">{erro}</p>}
 

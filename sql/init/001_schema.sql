@@ -31,17 +31,23 @@ CREATE TABLE admin (
   criado_em       TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- ativo = "desbloqueada": lojas nascem bloqueadas (invisíveis pro cliente) até o próprio
+-- lojista completar nome, foto de capa, foto de perfil e configurar o frete (rota
+-- PATCH /loja/me valida esses requisitos antes de aceitar ativo=true).
 CREATE TABLE loja (
-  id              SERIAL PRIMARY KEY,
-  id_grupo        INTEGER NOT NULL REFERENCES grupo(id),
-  nome            VARCHAR(120) NOT NULL,
-  email           VARCHAR(160) NOT NULL UNIQUE,
-  senha_hash      VARCHAR(200) NOT NULL,
-  telefone        VARCHAR(20),
-  endereco        VARCHAR(200),
-  imagem_url      VARCHAR(300),
-  ativo           BOOLEAN NOT NULL DEFAULT true,
-  criado_em       TIMESTAMP NOT NULL DEFAULT now()
+  id                 SERIAL PRIMARY KEY,
+  id_grupo           INTEGER NOT NULL REFERENCES grupo(id),
+  nome               VARCHAR(120) NOT NULL,
+  email              VARCHAR(160) NOT NULL UNIQUE,
+  senha_hash         VARCHAR(200) NOT NULL,
+  telefone           VARCHAR(20),
+  endereco           VARCHAR(200),
+  imagem_url         VARCHAR(300),
+  imagem_perfil_url  VARCHAR(300),
+  frete_gratis       BOOLEAN NOT NULL DEFAULT false,
+  valor_frete        NUMERIC(10,2),
+  ativo              BOOLEAN NOT NULL DEFAULT false,
+  criado_em          TIMESTAMP NOT NULL DEFAULT now()
 );
 
 -- Story some sozinho das consultas 24h depois de criado (filtro por criado_em nas rotas).
@@ -153,6 +159,7 @@ CREATE TABLE pedido (
   status            VARCHAR(20) NOT NULL DEFAULT 'recebido',
   total             NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_desconto    NUMERIC(10,2) NOT NULL DEFAULT 0,
+  valor_frete       NUMERIC(10,2) NOT NULL DEFAULT 0,
   observacoes       TEXT,
   criado_em         TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em     TIMESTAMP NOT NULL DEFAULT now(),

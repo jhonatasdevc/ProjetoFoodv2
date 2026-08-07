@@ -13,7 +13,7 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function CartBar({ idLoja }: { idLoja: number }) {
+function CartBar({ idLoja, freteGratis, valorFrete }: { idLoja: number; freteGratis: boolean; valorFrete: number | null }) {
   const { itemCount, total } = useCart();
   const [checkoutAberto, setCheckoutAberto] = useState(false);
   const searchParams = useSearchParams();
@@ -44,7 +44,14 @@ function CartBar({ idLoja }: { idLoja: number }) {
           <span>Ver carrinho — {formatBRL(total)}</span>
         </button>
       </div>
-      {checkoutAberto && <CheckoutForm idLoja={idLoja} onClose={() => setCheckoutAberto(false)} />}
+      {checkoutAberto && (
+        <CheckoutForm
+          idLoja={idLoja}
+          freteGratis={freteGratis}
+          valorFrete={valorFrete}
+          onClose={() => setCheckoutAberto(false)}
+        />
+      )}
     </>
   );
 }
@@ -86,6 +93,13 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
           {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
+          <p className="text-sm text-green-700 mt-1">
+            {data.loja.freteGratis
+              ? "Frete grátis"
+              : data.loja.valorFrete != null
+                ? `Frete ${formatBRL(data.loja.valorFrete)}`
+                : null}
+          </p>
         </div>
         <BotaoFavoritar idLoja={data.loja.id} />
       </header>
@@ -103,7 +117,7 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         ))}
       </div>
 
-      <CartBar idLoja={data.loja.id} />
+      <CartBar idLoja={data.loja.id} freteGratis={data.loja.freteGratis} valorFrete={data.loja.valorFrete} />
     </div>
   );
 }

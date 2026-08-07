@@ -62,14 +62,15 @@ function UltimosPedidosRow({ pedidos, lojas }: { pedidos: Pedido[]; lojas: Loja[
         {ultimos.map((p) => {
           const loja = lojas.find((l) => l.id === p.idLoja);
           return (
-            <Link key={p.id} href={`/loja/${p.idLoja}`} className="shrink-0 w-40 snap-start">
-              <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-gray-500 to-gray-700">
-                {loja?.imagemUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={loja.imagemUrl} alt={p.lojaNome} className="absolute inset-0 w-full h-full object-cover" />
-                )}
-                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/80 to-transparent" />
-                <span className="absolute left-2 right-2 bottom-2 text-white font-semibold text-xs leading-tight truncate">
+            <Link key={p.id} href={`/loja/${p.idLoja}`} className="shrink-0 w-32 snap-start">
+              <div className="w-32 h-24 rounded-lg border border-gray-200 bg-white flex flex-col items-center justify-center gap-1.5 p-2">
+                <div className="w-11 h-11 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                  {loja?.imagemPerfilUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={loja.imagemPerfilUrl} alt={p.lojaNome} className="w-full h-full object-cover" />
+                  )}
+                </div>
+                <span className="text-xs font-medium text-gray-900 text-center leading-tight truncate w-full">
                   {p.lojaNome}
                 </span>
               </div>

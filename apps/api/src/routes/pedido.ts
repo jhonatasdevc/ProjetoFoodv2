@@ -50,6 +50,9 @@ export default async function pedidoRoutes(app: FastifyInstance) {
     const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario!.idUsuario } });
     if (!usuario) return reply.code(404).send({ erro: "Usuário não encontrado" });
 
+    const loja = await prisma.loja.findUnique({ where: { id: input.idLoja } });
+    if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
+
     const endereco = await prisma.endereco.findUnique({ where: { id: input.idEndereco } });
     if (!endereco || endereco.idUsuario !== usuario.id) {
       return reply.code(403).send({ erro: "Endereço inválido" });
@@ -99,6 +102,8 @@ export default async function pedidoRoutes(app: FastifyInstance) {
 
     const enderecoTexto = `${endereco.rua}, ${endereco.numero}${endereco.complemento ? ` - ${endereco.complemento}` : ""} - ${endereco.cidade}/${endereco.estado} - CEP ${endereco.cep}`;
 
+    const valorFrete = loja.freteGratis ? 0 : Number(loja.valorFrete ?? 0);
+
     const pedido = await prisma.pedido.create({
       data: {
         idLoja: input.idLoja,
@@ -110,8 +115,9 @@ export default async function pedidoRoutes(app: FastifyInstance) {
         enderecoTexto,
         formaPagamento: input.formaPagamento,
         observacoes: input.observacoes,
-        total: total - valorDesconto,
+        total: total - valorDesconto + valorFrete,
         valorDesconto,
+        valorFrete,
         itens: { create: pedidoItensData },
         statusHistorico: { create: { status: "recebido" } },
       },

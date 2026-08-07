@@ -27,6 +27,9 @@ export function serializeLoja(loja: {
   telefone: string | null;
   endereco: string | null;
   imagemUrl: string | null;
+  imagemPerfilUrl: string | null;
+  freteGratis: boolean;
+  valorFrete: Prisma.Decimal | number | null;
   ativo: boolean;
 }): Loja {
   return {
@@ -37,6 +40,9 @@ export function serializeLoja(loja: {
     telefone: loja.telefone,
     endereco: loja.endereco,
     imagemUrl: loja.imagemUrl,
+    imagemPerfilUrl: loja.imagemPerfilUrl,
+    freteGratis: loja.freteGratis,
+    valorFrete: loja.valorFrete != null ? num(loja.valorFrete) : null,
     ativo: loja.ativo,
   };
 }
@@ -250,6 +256,7 @@ export function serializePedido(pedido: {
   status: string;
   total: Prisma.Decimal | number;
   valorDesconto: Prisma.Decimal | number;
+  valorFrete: Prisma.Decimal | number;
   observacoes: string | null;
   criadoEm: Date;
   atualizadoEm: Date;
@@ -269,6 +276,7 @@ export function serializePedido(pedido: {
     status: pedido.status as PedidoStatus,
     total: num(pedido.total),
     valorDesconto: num(pedido.valorDesconto),
+    valorFrete: num(pedido.valorFrete),
     observacoes: pedido.observacoes,
     criadoEm: pedido.criadoEm.toISOString(),
     atualizadoEm: pedido.atualizadoEm.toISOString(),

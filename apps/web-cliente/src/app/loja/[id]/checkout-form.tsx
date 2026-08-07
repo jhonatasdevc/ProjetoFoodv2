@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { CriarPedidoInput, Endereco } from "@delivery/shared";
 import { criarPedido, listEnderecos, validarCupom } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useCart } from "@/lib/cart-context";
+import { useCart, type CartLine } from "@/lib/cart-context";
 
 const FORMAS_PAGAMENTO: { value: CriarPedidoInput["formaPagamento"]; label: string }[] = [
   { value: "pix", label: "Pix" },
@@ -19,21 +19,89 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function CheckoutForm({ idLoja, onClose }: { idLoja: number; onClose: () => void }) {
+function ItensCarrinho({
+  lines,
+  changeQuantity,
+  removeLine,
+}: {
+  lines: CartLine[];
+  changeQuantity: (key: string, quantidade: number) => void;
+  removeLine: (key: string) => void;
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Seu carrinho</h3>
+      <div className="space-y-3">
+        {lines.map((l) => {
+          const precoLinha = l.precoUnitario + l.complementos.reduce((s, c) => s + c.precoAdicional, 0);
+          return (
+            <div key={l.key} className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">{l.nome}</p>
+                {l.complementos.length > 0 && (
+                  <p className="text-xs text-gray-500 truncate">{l.complementos.map((c) => c.nome).join(", ")}</p>
+                )}
+                {l.observacao && <p className="text-xs text-gray-500 italic">Obs: {l.observacao}</p>}
+                <p className="text-sm text-red-600 font-semibold mt-1">{formatBRL(precoLinha)}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(l.key, l.quantidade - 1)}
+                  className="w-6 h-6 rounded border border-gray-300 text-gray-700 text-sm leading-none"
+                >
+                  −
+                </button>
+                <span className="text-sm w-4 text-center">{l.quantidade}</span>
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(l.key, l.quantidade + 1)}
+                  className="w-6 h-6 rounded border border-gray-300 text-gray-700 text-sm leading-none"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeLine(l.key)}
+                  className="text-red-600 text-xs ml-1 hover:text-red-800"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function CheckoutForm({
+  idLoja,
+  freteGratis,
+  valorFrete,
+  onClose,
+}: {
+  idLoja: number;
+  freteGratis: boolean;
+  valorFrete: number | null;
+  onClose: () => void;
+}) {
   const { auth } = useAuth();
-  const { lines, total, clear } = useCart();
+  const { lines, total, clear, changeQuantity, removeLine } = useCart();
   const router = useRouter();
 
   if (!auth) {
     return (
       <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-20">
-        <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-6 space-y-4">
+        <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-6 space-y-4 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900">Finalizar pedido</h2>
             <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600">
               ×
             </button>
           </div>
+          <ItensCarrinho lines={lines} changeQuantity={changeQuantity} removeLine={removeLine} />
           <p className="text-sm text-gray-600">Você precisa estar cadastrado para finalizar o pedido.</p>
           <button
             onClick={() => router.push(`/login?redirect=/loja/${idLoja}`)}
@@ -46,23 +114,44 @@ export function CheckoutForm({ idLoja, onClose }: { idLoja: number; onClose: () 
     );
   }
 
-  return <CheckoutLogado idLoja={idLoja} onClose={onClose} token={auth.token} lines={lines} total={total} clear={clear} />;
+  return (
+    <CheckoutLogado
+      idLoja={idLoja}
+      freteGratis={freteGratis}
+      valorFrete={valorFrete}
+      onClose={onClose}
+      token={auth.token}
+      lines={lines}
+      total={total}
+      clear={clear}
+      changeQuantity={changeQuantity}
+      removeLine={removeLine}
+    />
+  );
 }
 
 function CheckoutLogado({
   idLoja,
+  freteGratis,
+  valorFrete,
   onClose,
   token,
   lines,
   total,
   clear,
+  changeQuantity,
+  removeLine,
 }: {
   idLoja: number;
+  freteGratis: boolean;
+  valorFrete: number | null;
   onClose: () => void;
   token: string;
-  lines: ReturnType<typeof useCart>["lines"];
+  lines: CartLine[];
   total: number;
   clear: () => void;
+  changeQuantity: (key: string, quantidade: number) => void;
+  removeLine: (key: string) => void;
 }) {
   const router = useRouter();
   const [enderecos, setEnderecos] = useState<Endereco[] | null>(null);
@@ -103,7 +192,8 @@ function CheckoutLogado({
     }
   }
 
-  const totalComDesconto = total - (cupomAplicado?.valorDesconto ?? 0);
+  const valorFreteCobrado = freteGratis ? 0 : (valorFrete ?? 0);
+  const totalComDesconto = total - (cupomAplicado?.valorDesconto ?? 0) + valorFreteCobrado;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -145,6 +235,8 @@ function CheckoutLogado({
             ×
           </button>
         </div>
+
+        <ItensCarrinho lines={lines} changeQuantity={changeQuantity} removeLine={removeLine} />
 
         <div>
           <label className="block text-sm text-gray-700 mb-2">Endereço de entrega</label>
@@ -225,6 +317,27 @@ function CheckoutLogado({
             rows={2}
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
+        </div>
+
+        <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatBRL(total)}</span>
+          </div>
+          <div className="flex justify-between text-gray-600">
+            <span>Frete</span>
+            <span>{freteGratis ? "Grátis" : formatBRL(valorFreteCobrado)}</span>
+          </div>
+          {cupomAplicado && (
+            <div className="flex justify-between text-green-700">
+              <span>Desconto</span>
+              <span>-{formatBRL(cupomAplicado.valorDesconto)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-semibold text-gray-900 pt-1">
+            <span>Total</span>
+            <span>{formatBRL(totalComDesconto)}</span>
+          </div>
         </div>
 
         {erro && <p className="text-sm text-red-600">{erro}</p>}

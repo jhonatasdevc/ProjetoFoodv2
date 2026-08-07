@@ -52,7 +52,11 @@ function NovaLojaContent() {
 
   return (
     <main className="flex-1 p-6 max-w-lg mx-auto w-full">
-      <h1 className="text-xl font-bold text-red-600 mb-6">Novo restaurante</h1>
+      <h1 className="text-xl font-bold text-red-600 mb-2">Novo restaurante</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        A loja nasce bloqueada (invisível pro cliente). Ela mesma desbloqueia no próprio painel depois de completar
+        nome, fotos e frete.
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm text-gray-700 mb-1">Nome</label>

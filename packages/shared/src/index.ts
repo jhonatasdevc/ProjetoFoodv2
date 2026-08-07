@@ -28,11 +28,18 @@ export interface Loja {
   telefone: string | null;
   endereco: string | null;
   imagemUrl: string | null;
+  imagemPerfilUrl: string | null;
+  freteGratis: boolean;
+  valorFrete: number | null;
   ativo: boolean;
 }
 
 export interface AtualizarLojaInput {
   imagemUrl?: string | null;
+  imagemPerfilUrl?: string | null;
+  freteGratis?: boolean;
+  valorFrete?: number | null;
+  ativo?: boolean;
 }
 
 export interface Grupo {
@@ -127,6 +134,7 @@ export interface Pedido {
   status: PedidoStatus;
   total: number;
   valorDesconto: number;
+  valorFrete: number;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;

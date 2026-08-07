@@ -12,6 +12,10 @@ const loginSchema = z.object({
 
 const atualizarLojaSchema = z.object({
   imagemUrl: z.string().url().nullable().optional(),
+  imagemPerfilUrl: z.string().url().nullable().optional(),
+  freteGratis: z.boolean().optional(),
+  valorFrete: z.number().positive().nullable().optional(),
+  ativo: z.boolean().optional(),
 });
 
 export default async function lojaRoutes(app: FastifyInstance) {
@@ -48,10 +52,31 @@ export default async function lojaRoutes(app: FastifyInstance) {
     return serializeLoja(loja);
   });
 
-  // PATCH protegido — a própria loja edita seus dados (hoje: só a foto de capa).
+  // PATCH protegido — a própria loja edita seus dados (foto de capa, foto de perfil, frete
+  // e o próprio desbloqueio). "ativo=true" só é aceito se nome, as duas fotos e o frete
+  // (grátis ou com valor definido) já estiverem configurados — senão a loja fica invisível
+  // pro cliente pra sempre por engano.
   app.patch("/loja/me", { preHandler: exigirAuthLoja }, async (req, reply) => {
     const parsed = atualizarLojaSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+
+    if (parsed.data.ativo === true) {
+      const atual = await prisma.loja.findUnique({ where: { id: req.loja!.idLoja } });
+      if (!atual) return reply.code(404).send({ erro: "Loja não encontrada" });
+
+      const imagemUrl = parsed.data.imagemUrl !== undefined ? parsed.data.imagemUrl : atual.imagemUrl;
+      const imagemPerfilUrl =
+        parsed.data.imagemPerfilUrl !== undefined ? parsed.data.imagemPerfilUrl : atual.imagemPerfilUrl;
+      const freteGratis = parsed.data.freteGratis !== undefined ? parsed.data.freteGratis : atual.freteGratis;
+      const valorFrete = parsed.data.valorFrete !== undefined ? parsed.data.valorFrete : atual.valorFrete;
+      const freteConfigurado = freteGratis || valorFrete != null;
+
+      if (!atual.nome || !imagemUrl || !imagemPerfilUrl || !freteConfigurado) {
+        return reply.code(400).send({
+          erro: "Complete o cadastro (foto de capa, foto de perfil e frete) antes de desbloquear a loja",
+        });
+      }
+    }
 
     const loja = await prisma.loja.update({ where: { id: req.loja!.idLoja }, data: parsed.data });
     return serializeLoja(loja);
