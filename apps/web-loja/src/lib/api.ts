@@ -1,11 +1,15 @@
 import type {
+  AtualizarLojaInput,
   Categoria,
   CardapioResponse,
   Item,
+  Loja,
   LoginLojaInput,
   LoginLojaResponse,
+  NovoStoryInput,
   Pedido,
   PedidoStatus,
+  Story,
 } from "@delivery/shared";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
@@ -14,7 +18,7 @@ async function request<T>(path: string, token: string | null, init?: RequestInit
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
@@ -33,6 +37,27 @@ export function loginLoja(input: LoginLojaInput): Promise<LoginLojaResponse> {
 
 export function getCardapio(idLoja: number, token: string): Promise<CardapioResponse> {
   return request(`/api/lojas/${idLoja}/cardapio`, token);
+}
+
+export function atualizarLojaMe(token: string, dados: AtualizarLojaInput): Promise<Loja> {
+  return request("/api/loja/me", token, { method: "PATCH", body: JSON.stringify(dados) });
+}
+
+// Não usa request<T>() — envia multipart/form-data, o navegador precisa definir o boundary sozinho.
+export async function uploadImagem(token: string, arquivo: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append("arquivo", arquivo);
+
+  const res = await fetch(`${API_URL}/api/uploads`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.erro ?? `Erro ${res.status}`);
+  }
+  return res.json();
 }
 
 export function listPedidos(token: string, status?: PedidoStatus): Promise<Pedido[]> {
@@ -61,6 +86,8 @@ export interface NovoItemInput {
   nome: string;
   descricao?: string;
   preco: number;
+  precoPromocional?: number | null;
+  imagemUrl?: string | null;
   disponivel?: boolean;
 }
 
@@ -74,4 +101,16 @@ export function editarItem(token: string, id: number, dados: Partial<NovoItemInp
 
 export function excluirItem(token: string, id: number): Promise<void> {
   return request(`/api/itens/${id}`, token, { method: "DELETE" });
+}
+
+export function listStories(token: string): Promise<Story[]> {
+  return request("/api/loja/stories", token);
+}
+
+export function criarStory(token: string, dados: NovoStoryInput): Promise<Story> {
+  return request("/api/loja/stories", token, { method: "POST", body: JSON.stringify(dados) });
+}
+
+export function excluirStory(token: string, id: number): Promise<void> {
+  return request(`/api/loja/stories/${id}`, token, { method: "DELETE" });
 }

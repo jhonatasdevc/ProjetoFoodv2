@@ -27,6 +27,12 @@ export function NavBar() {
           <Link href="/cardapio" className={pathname === "/cardapio" ? "text-green-700 font-medium" : "text-gray-600"}>
             Cardápio
           </Link>
+          <Link href="/stories" className={pathname === "/stories" ? "text-green-700 font-medium" : "text-gray-600"}>
+            Stories
+          </Link>
+          <Link href="/perfil" className={pathname === "/perfil" ? "text-green-700 font-medium" : "text-gray-600"}>
+            Perfil
+          </Link>
         </nav>
       </div>
       <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-600">

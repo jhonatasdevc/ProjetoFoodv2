@@ -41,7 +41,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-delivery}:${DB_PASSWORD:-delivery123}@db:5432/${DB_NAME:-delivery_db}
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:-troque_esse_segredo_em_producao}
-      CORS_ORIGIN: http://localhost:3001,http://localhost:3002
+      CORS_ORIGIN: http://localhost:3001,http://localhost:3002,http://localhost:3003
       NODE_ENV: development
     ports:
       - "3333:3333"           # API + Socket.io: http://localhost:3333
@@ -92,11 +92,31 @@ services:
     networks:
       - delivery_net
 
+  web-admin:
+    build:
+      context: .
+      dockerfile: apps/web-admin/Dockerfile.dev
+    container_name: delivery_web_admin
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3003:3003"           # painel admin: http://localhost:3003
+    depends_on:
+      - api
+    volumes:
+      - .:/repo
+      - web_admin_node_modules:/repo/node_modules
+    networks:
+      - delivery_net
+
 volumes:
   delivery_pgdata:
   api_node_modules:
   web_loja_node_modules:
   web_cliente_node_modules:
+  web_admin_node_modules:
 
 networks:
   delivery_net:

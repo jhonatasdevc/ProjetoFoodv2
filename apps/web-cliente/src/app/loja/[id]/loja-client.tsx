@@ -19,7 +19,7 @@ function CartBar({ idLoja }: { idLoja: number }) {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-red-100">
+      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-red-100 z-10">
         <button
           onClick={() => setCheckoutAberto(true)}
           className="w-full max-w-md mx-auto flex justify-between items-center bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700"
@@ -37,22 +37,28 @@ function CartBar({ idLoja }: { idLoja: number }) {
 
 function Cardapio({ data }: { data: CardapioResponse }) {
   return (
-    <div className="max-w-2xl mx-auto p-4 pb-28">
-      <header className="mb-6">
+    <div className="max-w-2xl mx-auto pb-40">
+      {data.loja.imagemUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={data.loja.imagemUrl} alt={data.loja.nome} className="w-full h-40 object-cover" />
+      )}
+      <header className="mb-6 p-4 pb-0">
         <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
         {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
       </header>
 
-      {data.categorias.map((categoria) => (
-        <section key={categoria.id} className="mb-8">
-          <h2 className="text-lg font-semibold text-green-700 mb-3">{categoria.nome}</h2>
-          <div className="space-y-3">
-            {categoria.itens.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="px-4">
+        {data.categorias.map((categoria) => (
+          <section key={categoria.id} className="mb-8">
+            <h2 className="text-lg font-semibold text-green-700 mb-3">{categoria.nome}</h2>
+            <div className="space-y-3">
+              {categoria.itens.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
 
       <CartBar idLoja={data.loja.id} />
     </div>
@@ -78,7 +84,7 @@ export function LojaClient({ idLoja }: { idLoja: string }) {
   }
 
   return (
-    <CartProvider>
+    <CartProvider idLoja={data.loja.id}>
       <Cardapio data={data} />
     </CartProvider>
   );

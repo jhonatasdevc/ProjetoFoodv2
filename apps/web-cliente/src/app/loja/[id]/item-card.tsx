@@ -13,6 +13,7 @@ export function ItemCard({ item }: { item: Item }) {
   const [aberto, setAberto] = useState(false);
   const [quantidade, setQuantidade] = useState(1);
   const [complementosSelecionados, setComplementosSelecionados] = useState<number[]>([]);
+  const [observacao, setObservacao] = useState("");
 
   if (!item.disponivel) return null;
 
@@ -20,24 +21,42 @@ export function ItemCard({ item }: { item: Item }) {
     setComplementosSelecionados((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
   }
 
+  const precoCobrado = item.precoPromocional ?? item.preco;
+
   function handleAdicionar() {
     const complementos = item.complementos
       .filter((c) => complementosSelecionados.includes(c.id))
       .map((c) => ({ idItemComplemento: c.id, nome: c.nome, precoAdicional: c.precoAdicional }));
 
-    addItem({ idItem: item.id, nome: item.nome, precoUnitario: item.preco, complementos }, quantidade);
+    addItem(
+      { idItem: item.id, nome: item.nome, precoUnitario: precoCobrado, observacao: observacao || undefined, complementos },
+      quantidade,
+    );
     setAberto(false);
     setQuantidade(1);
     setComplementosSelecionados([]);
+    setObservacao("");
   }
 
   return (
     <div className="border border-red-100 rounded-lg p-4 bg-white">
       <div className="flex justify-between gap-4">
-        <div>
+        {item.imagemUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.imagemUrl} alt={item.nome} className="w-16 h-16 rounded object-cover shrink-0" />
+        )}
+        <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{item.nome}</h3>
           {item.descricao && <p className="text-sm text-gray-600 mt-1">{item.descricao}</p>}
-          <p className="text-red-600 font-semibold mt-2">{formatBRL(item.preco)}</p>
+          {item.precoPromocional != null ? (
+            <p className="mt-2">
+              <span className="line-through text-gray-400 mr-2">{formatBRL(item.preco)}</span>
+              <span className="text-red-600 font-semibold">{formatBRL(item.precoPromocional)}</span>
+              <span className="ml-2 text-xs bg-red-600 text-white px-1.5 py-0.5 rounded">OFERTA</span>
+            </p>
+          ) : (
+            <p className="text-red-600 font-semibold mt-2">{formatBRL(item.preco)}</p>
+          )}
         </div>
         <button
           onClick={() => setAberto((v) => !v)}
@@ -67,6 +86,16 @@ export function ItemCard({ item }: { item: Item }) {
                 ))}
             </div>
           )}
+
+          <div>
+            <textarea
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              placeholder="Observação (opcional) — ex: sem cebola"
+              rows={2}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+          </div>
 
           <div className="flex items-center gap-3">
             <button

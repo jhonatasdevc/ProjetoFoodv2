@@ -15,6 +15,7 @@ interface AuthContextValue {
   auth: AuthState | null;
   carregando: boolean;
   login: (input: LoginLojaInput) => Promise<void>;
+  atualizarLoja: (loja: Loja) => void;
   logout: () => void;
 }
 
@@ -43,12 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuth(novoAuth);
   }
 
+  function atualizarLoja(loja: Loja) {
+    setAuth((prev) => {
+      if (!prev) return prev;
+      const novoAuth = { ...prev, loja };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(novoAuth));
+      return novoAuth;
+    });
+  }
+
   function logout() {
     localStorage.removeItem(STORAGE_KEY);
     setAuth(null);
   }
 
-  return <AuthContext.Provider value={{ auth, carregando, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ auth, carregando, login, atualizarLoja, logout }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

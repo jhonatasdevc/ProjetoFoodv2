@@ -1,11 +1,32 @@
-import type { CardapioResponse, CriarPedidoInput, Pedido } from "@delivery/shared";
+import type {
+  AtualizarPerfilInput,
+  CardapioResponse,
+  CriarEnderecoInput,
+  CriarPedidoInput,
+  Cupom,
+  Endereco,
+  Grupo,
+  Pedido,
+  SolicitarOtpInput,
+  SolicitarOtpResponse,
+  StoriesLoja,
+  Usuario,
+  ValidarCupomInput,
+  ValidarCupomResponse,
+  VerificarOtpInput,
+  VerificarOtpResponse,
+} from "@delivery/shared";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, token: string | null, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -15,14 +36,66 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export function getGrupos(): Promise<Grupo[]> {
+  return request("/api/grupos", null);
+}
+
 export function getCardapio(idLoja: string | number): Promise<CardapioResponse> {
-  return request(`/api/lojas/${idLoja}/cardapio`);
+  return request(`/api/lojas/${idLoja}/cardapio`, null);
 }
 
 export function getPedido(id: string | number): Promise<Pedido> {
-  return request(`/api/pedidos/${id}`);
+  return request(`/api/pedidos/${id}`, null);
 }
 
-export function criarPedido(input: CriarPedidoInput): Promise<Pedido> {
-  return request("/api/pedidos", { method: "POST", body: JSON.stringify(input) });
+export function criarPedido(token: string, input: CriarPedidoInput): Promise<Pedido> {
+  return request("/api/pedidos", token, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function solicitarOtp(input: SolicitarOtpInput): Promise<SolicitarOtpResponse> {
+  return request("/api/usuarios/otp/solicitar", null, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function verificarOtp(input: VerificarOtpInput): Promise<VerificarOtpResponse> {
+  return request("/api/usuarios/otp/verificar", null, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function getUsuarioMe(token: string): Promise<Usuario> {
+  return request("/api/usuarios/me", token);
+}
+
+export function patchUsuarioMe(token: string, input: AtualizarPerfilInput): Promise<Usuario> {
+  return request("/api/usuarios/me", token, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export function listEnderecos(token: string): Promise<Endereco[]> {
+  return request("/api/usuarios/me/enderecos", token);
+}
+
+export function criarEndereco(token: string, input: CriarEnderecoInput): Promise<Endereco> {
+  return request("/api/usuarios/me/enderecos", token, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function editarEndereco(token: string, id: number, input: Partial<CriarEnderecoInput>): Promise<Endereco> {
+  return request(`/api/usuarios/me/enderecos/${id}`, token, { method: "PUT", body: JSON.stringify(input) });
+}
+
+export function excluirEndereco(token: string, id: number): Promise<void> {
+  return request(`/api/usuarios/me/enderecos/${id}`, token, { method: "DELETE" });
+}
+
+export function validarCupom(token: string, input: ValidarCupomInput): Promise<ValidarCupomResponse> {
+  return request("/api/cupons/validar", token, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function getCuponsAtivos(): Promise<Cupom[]> {
+  return request("/api/cupons/ativos", null);
+}
+
+export function getMeusPedidos(token: string): Promise<Pedido[]> {
+  return request("/api/usuarios/me/pedidos", token);
+}
+
+export function getStories(): Promise<StoriesLoja[]> {
+  return request("/api/stories", null);
 }

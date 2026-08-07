@@ -1,18 +1,53 @@
--- Dados de exemplo pra testar o MVP localmente.
--- Senha da loja de teste: "senha123" (hash bcrypt abaixo, ver apps/api/README ou seed.ts)
--- Gerado com bcrypt.hashSync('senha123', 10)
-INSERT INTO loja (nome, email, senha_hash, telefone, endereco) VALUES
-  ('Pizzaria do Zé', 'ze@pizzaria.com', '$2b$10$NA2R9CzmTVfz1oB1z9fIJebL9e1rUUJNspJE9wEB/bhdXh5t1FKvK', '11999998888', 'Rua das Pizzas, 100');
+-- Dados de exemplo pra testar localmente.
+-- Senha de todas as lojas de teste: "senha123" — gerado com bcrypt.hashSync('senha123', 10)
+-- Senha do admin de teste: "admin123" — gerado com bcrypt.hashSync('admin123', 10)
+
+INSERT INTO grupo (nome, ordem) VALUES
+  ('Pizza', 1),
+  ('Hambúrguer', 2),
+  ('Japonesa', 3),
+  ('Doces', 4),
+  ('Brasileira', 5),
+  ('Saudável', 6);
+
+INSERT INTO admin (nome, email, senha_hash) VALUES
+  ('Admin', 'admin@delivery.com', '$2a$10$oAAUzztSy6.SFN03tNHJFuVzeHMmeYAxxMHzqzeYl13KWS1syKY9W');
+
+INSERT INTO loja (id_grupo, nome, email, senha_hash, telefone, endereco, imagem_url) VALUES
+  (1, 'Pizzaria do Zé', 'ze@pizzaria.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11999998888', 'Rua das Pizzas, 100', 'https://picsum.photos/seed/pizzaria-do-ze/480/600'),
+  (2, 'Burger House', 'contato@burgerhouse.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11988887777', 'Av. dos Hambúrgueres, 200', 'https://picsum.photos/seed/burger-house/480/600'),
+  (3, 'Sushi Kazu', 'contato@sushikazu.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11977776666', 'Rua Japão, 300', 'https://picsum.photos/seed/sushi-kazu/480/600'),
+  (4, 'Doce Sonho', 'contato@docesonho.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11966665555', 'Rua das Sobremesas, 400', 'https://picsum.photos/seed/doce-sonho/480/600'),
+  (5, 'Sabor Caseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600'),
+  (6, 'Verde Vida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600');
 
 INSERT INTO categoria (id_loja, nome, ordem) VALUES
   (1, 'Pizzas', 1),
-  (1, 'Bebidas', 2);
+  (1, 'Bebidas', 2),
+  (2, 'Lanches', 1),
+  (3, 'Combinados', 1),
+  (4, 'Doces', 1),
+  (5, 'Pratos', 1),
+  (6, 'Saladas', 1);
 
 INSERT INTO item (id_categoria, nome, descricao, preco) VALUES
   (1, 'Pizza Margherita', 'Molho de tomate, mussarela e manjericão', 42.90),
   (1, 'Pizza Calabresa', 'Molho de tomate, mussarela e calabresa', 39.90),
-  (2, 'Refrigerante Lata', 'Coca-Cola, Guaraná ou Fanta', 6.00);
+  (2, 'Refrigerante Lata', 'Coca-Cola, Guaraná ou Fanta', 6.00),
+  (3, 'X-Burger', 'Pão, hambúrguer, queijo, alface e tomate', 24.90),
+  (3, 'X-Bacon', 'Pão, hambúrguer, queijo, bacon e molho especial', 28.90),
+  (4, 'Combo 20 peças', 'Sushis e sashimis variados', 49.90),
+  (4, 'Temaki Salmão', 'Temaki de salmão fresco', 22.90),
+  (5, 'Brownie', 'Brownie de chocolate com nozes', 12.90),
+  (5, 'Pudim', 'Pudim de leite condensado', 9.90),
+  (6, 'Feijoada', 'Feijoada completa com acompanhamentos', 32.90),
+  (6, 'Frango com Quiabo', 'Frango caipira com quiabo e polenta', 28.90),
+  (7, 'Salada Caesar', 'Alface, frango grelhado, croutons e parmesão', 24.90),
+  (7, 'Bowl Vegano', 'Grãos, legumes e molho tahine', 26.90);
 
 INSERT INTO item_complemento (id_item, nome, preco_adicional) VALUES
   (1, 'Borda recheada catupiry', 8.00),
   (2, 'Borda recheada catupiry', 8.00);
+
+INSERT INTO cupom (codigo, tipo_desconto, valor_desconto) VALUES
+  ('BEMVINDO10', 'percentual', 10);

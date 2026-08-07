@@ -101,6 +101,7 @@ function PedidosContent() {
                     {item.complementos.length > 0 && (
                       <span className="text-gray-500"> ({item.complementos.map((c) => c.nome).join(", ")})</span>
                     )}
+                    {item.observacao && <span className="text-amber-700"> — obs: {item.observacao}</span>}
                   </li>
                 ))}
               </ul>

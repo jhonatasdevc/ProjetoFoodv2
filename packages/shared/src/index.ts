@@ -22,11 +22,25 @@ export const PEDIDO_STATUS_LABEL: Record<PedidoStatus, string> = {
 
 export interface Loja {
   id: number;
+  idGrupo: number;
   nome: string;
   email: string;
   telefone: string | null;
   endereco: string | null;
+  imagemUrl: string | null;
   ativo: boolean;
+}
+
+export interface AtualizarLojaInput {
+  imagemUrl?: string | null;
+}
+
+export interface Grupo {
+  id: number;
+  nome: string;
+  ordem: number;
+  ativo: boolean;
+  lojas: Loja[];
 }
 
 export interface ItemComplemento {
@@ -43,6 +57,7 @@ export interface Item {
   nome: string;
   descricao: string | null;
   preco: number;
+  precoPromocional: number | null;
   imagemUrl: string | null;
   disponivel: boolean;
   complementos: ItemComplemento[];
@@ -74,9 +89,8 @@ export interface PedidoItemInput {
 
 export interface CriarPedidoInput {
   idLoja: number;
-  clienteNome: string;
-  clienteTelefone: string;
-  enderecoTexto: string;
+  idEndereco: number;
+  cupomCodigo?: string;
   formaPagamento: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito";
   observacoes?: string;
   itens: PedidoItemInput[];
@@ -102,12 +116,17 @@ export interface PedidoItem {
 export interface Pedido {
   id: number;
   idLoja: number;
+  lojaNome: string;
+  idUsuario: number;
+  idEndereco: number | null;
+  idCupom: number | null;
   clienteNome: string;
   clienteTelefone: string;
   enderecoTexto: string;
   formaPagamento: string;
   status: PedidoStatus;
   total: number;
+  valorDesconto: number;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;
@@ -122,6 +141,156 @@ export interface LoginLojaInput {
 export interface LoginLojaResponse {
   token: string;
   loja: Loja;
+}
+
+export interface Endereco {
+  id: number;
+  idUsuario: number;
+  cep: string;
+  cidade: string;
+  estado: string;
+  rua: string;
+  numero: string;
+  complemento: string | null;
+  referencia: string | null;
+  padrao: boolean;
+}
+
+export interface CriarEnderecoInput {
+  cep: string;
+  cidade: string;
+  estado: string;
+  rua: string;
+  numero: string;
+  complemento?: string;
+  referencia?: string;
+  padrao?: boolean;
+}
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  sobrenome: string;
+  telefone: string;
+  enderecos: Endereco[];
+}
+
+export interface AtualizarPerfilInput {
+  nome?: string;
+  sobrenome?: string;
+}
+
+export interface SolicitarOtpInput {
+  telefone: string;
+}
+
+export interface SolicitarOtpResponse {
+  enviado: true;
+  codigoDev: string;
+}
+
+export interface VerificarOtpInput {
+  telefone: string;
+  codigo: string;
+  nome?: string;
+  sobrenome?: string;
+}
+
+export type VerificarOtpResponse =
+  | { precisaCadastro: true }
+  | { precisaCadastro: false; token: string; usuario: Usuario };
+
+export interface ValidarCupomInput {
+  codigo: string;
+  subtotal: number;
+}
+
+export type ValidarCupomResponse =
+  | { valido: true; idCupom: number; valorDesconto: number }
+  | { valido: false; erro: string };
+
+export interface Admin {
+  id: number;
+  nome: string;
+  email: string;
+}
+
+export interface LoginAdminInput {
+  email: string;
+  senha: string;
+}
+
+export interface LoginAdminResponse {
+  token: string;
+  admin: Admin;
+}
+
+export interface NovaLojaAdminInput {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone?: string;
+  endereco?: string;
+  idGrupo: number;
+}
+
+export interface EditarLojaAdminInput {
+  nome?: string;
+  telefone?: string;
+  endereco?: string;
+  idGrupo?: number;
+  ativo?: boolean;
+  senha?: string;
+}
+
+export interface NovoGrupoInput {
+  nome: string;
+  ordem?: number;
+}
+
+export interface EditarGrupoInput {
+  nome?: string;
+  ordem?: number;
+  ativo?: boolean;
+}
+
+export interface Cupom {
+  id: number;
+  codigo: string;
+  tipoDesconto: "percentual" | "valor_fixo";
+  valorDesconto: number;
+  ativo: boolean;
+  validoAte: string | null;
+}
+
+export type PercentualCupom = 5 | 10 | 15 | 20;
+
+export interface NovoCupomAdminInput {
+  codigo: string;
+  valorDesconto: PercentualCupom;
+  validoAte?: string;
+}
+
+export interface EditarCupomAdminInput {
+  ativo?: boolean;
+  validoAte?: string | null;
+}
+
+export interface Story {
+  id: number;
+  imagemUrl: string;
+  criadoEm: string;
+}
+
+export interface StoriesLoja {
+  idLoja: number;
+  lojaNome: string;
+  lojaImagemUrl: string | null;
+  stories: Story[];
+}
+
+export interface NovoStoryInput {
+  imagemUrl: string;
 }
 
 export const SOCKET_EVENTS = {

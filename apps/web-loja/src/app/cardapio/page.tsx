@@ -10,6 +10,7 @@ import {
   excluirCategoria,
   excluirItem,
   getCardapio,
+  uploadImagem,
 } from "@/lib/api";
 import type { Categoria } from "@delivery/shared";
 
@@ -59,6 +60,93 @@ function NovoItemForm({ idCategoria, token, onCriado }: { idCategoria: number; t
         Adicionar
       </button>
     </form>
+  );
+}
+
+function OfertaInline({ idItem, precoPromocional, token, onSalvo }: { idItem: number; precoPromocional: number | null; token: string; onSalvo: () => void }) {
+  const [valor, setValor] = useState(precoPromocional != null ? String(precoPromocional) : "");
+  const [salvando, setSalvando] = useState(false);
+
+  async function handleSalvar() {
+    setSalvando(true);
+    try {
+      const num = valor ? Number(valor.replace(",", ".")) : null;
+      await editarItem(token, idItem, { precoPromocional: num });
+      onSalvo();
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1 ml-6">
+      <span className="text-xs text-gray-500">Preço promocional:</span>
+      <input
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        placeholder="ex: 29,90"
+        className="w-24 border border-gray-300 rounded px-2 py-0.5 text-xs"
+      />
+      <button
+        onClick={handleSalvar}
+        disabled={salvando}
+        className="text-xs text-green-700 hover:text-green-900 disabled:opacity-50"
+      >
+        Salvar
+      </button>
+    </div>
+  );
+}
+
+function ImagemInline({ idItem, imagemUrl, token, onSalvo }: { idItem: number; imagemUrl: string | null; token: string; onSalvo: () => void }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function handleEscolherArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErro(null);
+    setEnviando(true);
+    try {
+      const { url } = await uploadImagem(token, file);
+      await editarItem(token, idItem, { imagemUrl: url });
+      onSalvo();
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Erro ao enviar imagem");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function handleRemover() {
+    setEnviando(true);
+    try {
+      await editarItem(token, idItem, { imagemUrl: null });
+      onSalvo();
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1 ml-6">
+      <span className="text-xs text-gray-500">Foto do produto:</span>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleEscolherArquivo}
+        disabled={enviando}
+        className="text-xs"
+      />
+      {imagemUrl && (
+        <button onClick={handleRemover} disabled={enviando} className="text-xs text-gray-400 hover:text-red-600 disabled:opacity-50">
+          remover
+        </button>
+      )}
+      {enviando && <span className="text-xs text-gray-400">enviando...</span>}
+      {erro && <span className="text-xs text-red-600">{erro}</span>}
+    </div>
   );
 }
 
@@ -130,22 +218,42 @@ function CardapioContent() {
             </button>
           </div>
 
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {categoria.itens.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 text-sm">
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={item.disponivel}
-                    onChange={(e) => handleToggleDisponivel(item.id, e.target.checked)}
-                    className="accent-green-600"
-                  />
-                </label>
-                <span className={`flex-1 ${item.disponivel ? "text-gray-900" : "text-gray-400 line-through"}`}>{item.nome}</span>
-                <span className="text-gray-600">{formatBRL(item.preco)}</span>
-                <button onClick={() => handleExcluirItem(item.id)} className="text-gray-400 hover:text-red-600">
-                  ×
-                </button>
+              <li key={item.id} className="text-sm">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={item.disponivel}
+                      onChange={(e) => handleToggleDisponivel(item.id, e.target.checked)}
+                      className="accent-green-600"
+                    />
+                  </label>
+                  {item.imagemUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imagemUrl} alt={item.nome} className="w-8 h-8 rounded object-cover" />
+                  )}
+                  <span className={`flex-1 ${item.disponivel ? "text-gray-900" : "text-gray-400 line-through"}`}>{item.nome}</span>
+                  {item.precoPromocional != null ? (
+                    <span className="text-gray-600">
+                      <span className="line-through text-gray-400 mr-1">{formatBRL(item.preco)}</span>
+                      <span className="text-red-600 font-medium">{formatBRL(item.precoPromocional)}</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-600">{formatBRL(item.preco)}</span>
+                  )}
+                  <button onClick={() => handleExcluirItem(item.id)} className="text-gray-400 hover:text-red-600">
+                    ×
+                  </button>
+                </div>
+                <OfertaInline
+                  idItem={item.id}
+                  precoPromocional={item.precoPromocional}
+                  token={auth!.token}
+                  onSalvo={recarregar}
+                />
+                <ImagemInline idItem={item.id} imagemUrl={item.imagemUrl} token={auth!.token} onSalvo={recarregar} />
               </li>
             ))}
           </ul>

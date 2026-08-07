@@ -62,10 +62,16 @@ export function PedidoClient({ idPedido }: { idPedido: string }) {
               {item.complementos.length > 0 && (
                 <span className="text-gray-500"> ({item.complementos.map((c) => c.nome).join(", ")})</span>
               )}
+              {item.observacao && <span className="text-amber-700"> — obs: {item.observacao}</span>}
             </li>
           ))}
         </ul>
-        <p className="mt-3 font-semibold text-gray-900">Total: {formatBRL(pedido.total)}</p>
+        <div className="mt-3">
+          {pedido.valorDesconto > 0 && (
+            <p className="text-sm text-green-700">Desconto do cupom: -{formatBRL(pedido.valorDesconto)}</p>
+          )}
+          <p className="font-semibold text-gray-900">Total: {formatBRL(pedido.total)}</p>
+        </div>
       </div>
     </div>
   );

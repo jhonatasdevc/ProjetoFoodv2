@@ -14,7 +14,8 @@ const itemSchema = z.object({
   nome: z.string().min(1),
   descricao: z.string().optional(),
   preco: z.number().positive(),
-  imagemUrl: z.string().url().optional(),
+  precoPromocional: z.number().positive().nullable().optional(),
+  imagemUrl: z.string().url().nullable().optional(),
   disponivel: z.boolean().optional(),
 });
 

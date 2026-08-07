@@ -10,19 +10,118 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Imagem {
+  id       Int      @id @default(autoincrement())
+  dados    Bytes
+  tipo     String   @db.VarChar(100)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("imagem")
+}
+
+model Grupo {
+  id       Int      @id @default(autoincrement())
+  nome     String   @db.VarChar(80)
+  ordem    Int      @default(0)
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now()) @map("criado_em")
+  lojas    Loja[]
+
+  @@map("grupo")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  nome      String   @db.VarChar(120)
+  email     String   @unique @db.VarChar(160)
+  senhaHash String   @map("senha_hash") @db.VarChar(200)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@map("admin")
+}
+
 model Loja {
   id         Int         @id @default(autoincrement())
+  idGrupo    Int         @map("id_grupo")
   nome       String      @db.VarChar(120)
   email      String      @unique @db.VarChar(160)
   senhaHash  String      @map("senha_hash") @db.VarChar(200)
   telefone   String?     @db.VarChar(20)
   endereco   String?     @db.VarChar(200)
+  imagemUrl  String?     @map("imagem_url") @db.VarChar(300)
   ativo      Boolean     @default(true)
   criadoEm   DateTime    @default(now()) @map("criado_em")
+  grupo      Grupo       @relation(fields: [idGrupo], references: [id])
   categorias Categoria[]
   pedidos    Pedido[]
+  stories    Story[]
 
   @@map("loja")
+}
+
+model Story {
+  id        Int      @id @default(autoincrement())
+  idLoja    Int      @map("id_loja")
+  imagemUrl String   @map("imagem_url") @db.VarChar(300)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  loja      Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("story")
+}
+
+model Usuario {
+  id        Int        @id @default(autoincrement())
+  nome      String     @db.VarChar(80)
+  sobrenome String     @db.VarChar(80)
+  telefone  String     @unique @db.VarChar(20)
+  criadoEm  DateTime   @default(now()) @map("criado_em")
+  enderecos Endereco[]
+  pedidos   Pedido[]
+
+  @@map("usuario")
+}
+
+model Endereco {
+  id          Int      @id @default(autoincrement())
+  idUsuario   Int      @map("id_usuario")
+  cep         String   @db.VarChar(10)
+  cidade      String   @db.VarChar(80)
+  estado      String   @db.VarChar(2)
+  rua         String   @db.VarChar(160)
+  numero      String   @db.VarChar(20)
+  complemento String?  @db.VarChar(80)
+  referencia  String?  @db.VarChar(160)
+  padrao      Boolean  @default(false)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  usuario     Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  pedidos     Pedido[]
+
+  @@map("endereco")
+}
+
+model OtpCodigo {
+  id       Int      @id @default(autoincrement())
+  telefone String   @db.VarChar(20)
+  codigo   String   @db.VarChar(6)
+  expiraEm DateTime @map("expira_em")
+  usado    Boolean  @default(false)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("otp_codigo")
+  @@index([telefone])
+}
+
+model Cupom {
+  id            Int       @id @default(autoincrement())
+  codigo        String    @unique @db.VarChar(30)
+  tipoDesconto  String    @map("tipo_desconto") @db.VarChar(20)
+  valorDesconto Decimal   @map("valor_desconto") @db.Decimal(10, 2)
+  ativo         Boolean   @default(true)
+  validoAte     DateTime? @map("valido_ate")
+  criadoEm      DateTime  @default(now()) @map("criado_em")
+  pedidos       Pedido[]
+
+  @@map("cupom")
 }
 
 model Categoria {
@@ -38,13 +137,14 @@ model Categoria {
 }
 
 model Item {
-  id           Int               @id @default(autoincrement())
-  idCategoria  Int               @map("id_categoria")
-  nome         String            @db.VarChar(120)
-  descricao    String?
-  preco        Decimal           @db.Decimal(10, 2)
-  imagemUrl    String?           @map("imagem_url") @db.VarChar(300)
-  disponivel   Boolean           @default(true)
+  id                Int               @id @default(autoincrement())
+  idCategoria       Int               @map("id_categoria")
+  nome              String            @db.VarChar(120)
+  descricao         String?
+  preco             Decimal           @db.Decimal(10, 2)
+  precoPromocional  Decimal?          @map("preco_promocional") @db.Decimal(10, 2)
+  imagemUrl         String?           @map("imagem_url") @db.VarChar(300)
+  disponivel        Boolean           @default(true)
   criadoEm     DateTime          @default(now()) @map("criado_em")
   categoria    Categoria         @relation(fields: [idCategoria], references: [id], onDelete: Cascade)
   complementos ItemComplemento[]
@@ -68,16 +168,23 @@ model ItemComplemento {
 model Pedido {
   id               Int          @id @default(autoincrement())
   idLoja           Int          @map("id_loja")
+  idUsuario        Int          @map("id_usuario")
+  idEndereco       Int?         @map("id_endereco")
+  idCupom          Int?         @map("id_cupom")
   clienteNome      String       @map("cliente_nome") @db.VarChar(120)
   clienteTelefone  String       @map("cliente_telefone") @db.VarChar(20)
   enderecoTexto    String       @map("endereco_texto")
   formaPagamento   String       @map("forma_pagamento") @db.VarChar(30)
   status           String       @default("recebido") @db.VarChar(20)
   total            Decimal      @default(0) @db.Decimal(10, 2)
+  valorDesconto    Decimal      @default(0) @map("valor_desconto") @db.Decimal(10, 2)
   observacoes      String?
   criadoEm         DateTime     @default(now()) @map("criado_em")
   atualizadoEm     DateTime     @default(now()) @map("atualizado_em")
   loja             Loja         @relation(fields: [idLoja], references: [id])
+  usuario          Usuario      @relation(fields: [idUsuario], references: [id])
+  endereco         Endereco?    @relation(fields: [idEndereco], references: [id], onDelete: SetNull)
+  cupom            Cupom?       @relation(fields: [idCupom], references: [id], onDelete: SetNull)
   itens            PedidoItem[]
   statusHistorico  PedidoStatusHistorico[]
 

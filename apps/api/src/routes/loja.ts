@@ -10,6 +10,10 @@ const loginSchema = z.object({
   senha: z.string().min(1),
 });
 
+const atualizarLojaSchema = z.object({
+  imagemUrl: z.string().url().nullable().optional(),
+});
+
 export default async function lojaRoutes(app: FastifyInstance) {
   // GET público — usado pelo web-cliente pra montar a tela /loja/{id}
   app.get("/lojas/:id", async (req, reply) => {
@@ -41,6 +45,15 @@ export default async function lojaRoutes(app: FastifyInstance) {
   app.get("/loja/me", { preHandler: exigirAuthLoja }, async (req, reply) => {
     const loja = await prisma.loja.findUnique({ where: { id: req.loja!.idLoja } });
     if (!loja) return reply.code(404).send({ erro: "Loja não encontrada" });
+    return serializeLoja(loja);
+  });
+
+  // PATCH protegido — a própria loja edita seus dados (hoje: só a foto de capa).
+  app.patch("/loja/me", { preHandler: exigirAuthLoja }, async (req, reply) => {
+    const parsed = atualizarLojaSchema.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+
+    const loja = await prisma.loja.update({ where: { id: req.loja!.idLoja }, data: parsed.data });
     return serializeLoja(loja);
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export interface CartComplemento {
   idItemComplemento: number;
@@ -14,6 +14,7 @@ export interface CartLine {
   nome: string;
   precoUnitario: number;
   quantidade: number;
+  observacao?: string;
   complementos: CartComplemento[];
 }
 
@@ -29,16 +30,32 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-function lineKey(idItem: number, complementos: CartComplemento[]) {
+function lineKey(idItem: number, complementos: CartComplemento[], observacao?: string) {
   const ids = complementos.map((c) => c.idItemComplemento).sort().join("-");
-  return `${idItem}:${ids}`;
+  return `${idItem}:${ids}:${observacao ?? ""}`;
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>([]);
+// Persistido no localStorage por loja: o checkout agora exige login, o que navega
+// pra /login e de volta — sem isso o carrinho (em memória) se perderia nesse trajeto.
+export function CartProvider({ idLoja, children }: { idLoja: number; children: ReactNode }) {
+  const storageKey = `delivery.cart.${idLoja}`;
+
+  const [lines, setLines] = useState<CartLine[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(lines));
+  }, [storageKey, lines]);
 
   const addItem: CartContextValue["addItem"] = (input, quantidade) => {
-    const key = lineKey(input.idItem, input.complementos);
+    const key = lineKey(input.idItem, input.complementos, input.observacao);
     setLines((prev) => {
       const existente = prev.find((l) => l.key === key);
       if (existente) {

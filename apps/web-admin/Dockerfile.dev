@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+WORKDIR /repo
+
+COPY package.json package-lock.json* ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY apps/web-admin/package.json apps/web-admin/package.json
+
+RUN npm install
+
+COPY packages/shared packages/shared
+COPY apps/web-admin apps/web-admin
+
+WORKDIR /repo/apps/web-admin
+
+EXPOSE 3003
+CMD ["npm", "run", "dev"]
