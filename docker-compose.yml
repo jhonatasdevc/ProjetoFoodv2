@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-delivery123}
       POSTGRES_DB: ${DB_NAME:-delivery_db}
     ports:
-      - "5432:5432"          # exposto no host — Claude Code conecta em localhost:5432
+      - "127.0.0.1:5432:5432"   # só acessível localmente — nunca exponha o banco pra internet
     volumes:
       - delivery_pgdata:/var/lib/postgresql/data
       - ./sql/init:/docker-entrypoint-initdb.d   # scripts .sql aqui rodam na 1ª subida
@@ -25,7 +25,7 @@ services:
     container_name: delivery_adminer
     restart: unless-stopped
     ports:
-      - "8081:8080"           # interface web pra ver as tabelas: http://localhost:8081
+      - "127.0.0.1:8081:8080"   # só acessível localmente — nunca exponha o Adminer pra internet
     depends_on:
       - db
     networks:
@@ -41,10 +41,10 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-delivery}:${DB_PASSWORD:-delivery123}@db:5432/${DB_NAME:-delivery_db}
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:-troque_esse_segredo_em_producao}
-      CORS_ORIGIN: http://localhost:3001,http://localhost:3002,http://localhost:3003
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001,http://localhost:3002,http://localhost:3003}
       NODE_ENV: development
     ports:
-      - "3333:3333"           # API + Socket.io: http://localhost:3333
+      - "3333:3333"           # API + Socket.io: http://localhost:3333 (local); no VPS o acesso público é via Traefik
     depends_on:
       db:
         condition: service_healthy
@@ -53,6 +53,14 @@ services:
       - api_node_modules:/repo/node_modules
     networks:
       - delivery_net
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.delivery-api.rule=Host(`${API_DOMAIN:-api.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-api.entrypoints=websecure
+      - traefik.http.routers.delivery-api.tls.certresolver=letsencrypt
+      - traefik.http.services.delivery-api.loadbalancer.server.port=3333
 
   web-loja:
     build:
@@ -61,10 +69,10 @@ services:
     container_name: delivery_web_loja
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3333
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
-      - "3001:3001"           # painel da loja: http://localhost:3001
+      - "3001:3001"           # painel da loja: http://localhost:3001 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
     volumes:
@@ -72,6 +80,14 @@ services:
       - web_loja_node_modules:/repo/node_modules
     networks:
       - delivery_net
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.delivery-web-loja.rule=Host(`${WEB_LOJA_DOMAIN:-loja.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-loja.entrypoints=websecure
+      - traefik.http.routers.delivery-web-loja.tls.certresolver=letsencrypt
+      - traefik.http.services.delivery-web-loja.loadbalancer.server.port=3001
 
   web-cliente:
     build:
@@ -80,10 +96,10 @@ services:
     container_name: delivery_web_cliente
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3333
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
-      - "3002:3002"           # site do cliente: http://localhost:3002
+      - "3002:3002"           # site do cliente: http://localhost:3002 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
     volumes:
@@ -91,6 +107,14 @@ services:
       - web_cliente_node_modules:/repo/node_modules
     networks:
       - delivery_net
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.delivery-web-cliente.rule=Host(`${WEB_CLIENTE_DOMAIN:-pedidos.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-cliente.entrypoints=websecure
+      - traefik.http.routers.delivery-web-cliente.tls.certresolver=letsencrypt
+      - traefik.http.services.delivery-web-cliente.loadbalancer.server.port=3002
 
   web-admin:
     build:
@@ -99,10 +123,10 @@ services:
     container_name: delivery_web_admin
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3333
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
-      - "3003:3003"           # painel admin: http://localhost:3003
+      - "3003:3003"           # painel admin: http://localhost:3003 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
     volumes:
@@ -110,6 +134,14 @@ services:
       - web_admin_node_modules:/repo/node_modules
     networks:
       - delivery_net
+      - traefik-proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.delivery-web-admin.rule=Host(`${WEB_ADMIN_DOMAIN:-admin.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-admin.entrypoints=websecure
+      - traefik.http.routers.delivery-web-admin.tls.certresolver=letsencrypt
+      - traefik.http.services.delivery-web-admin.loadbalancer.server.port=3003
 
 volumes:
   delivery_pgdata:
@@ -121,3 +153,5 @@ volumes:
 networks:
   delivery_net:
     driver: bridge
+  traefik-proxy:
+    external: true   # rede já criada pelo Traefik no VPS — não é gerenciada por este compose
