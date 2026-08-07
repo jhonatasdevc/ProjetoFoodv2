@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16-alpine
+    build:
+      context: ./sql
     container_name: delivery_db
     restart: unless-stopped
     environment:
@@ -11,7 +12,6 @@ services:
       - "127.0.0.1:5432:5432"   # só acessível localmente — nunca exponha o banco pra internet
     volumes:
       - delivery_pgdata:/var/lib/postgresql/data
-      - ./sql/init:/docker-entrypoint-initdb.d   # scripts .sql aqui rodam na 1ª subida
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-delivery}"]
       interval: 5s
