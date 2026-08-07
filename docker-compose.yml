@@ -48,9 +48,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - .:/repo
-      - api_node_modules:/repo/node_modules
     networks:
       - delivery_net
       - traefik-proxy
@@ -75,9 +72,6 @@ services:
       - "3001:3001"           # painel da loja: http://localhost:3001 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
-    volumes:
-      - .:/repo
-      - web_loja_node_modules:/repo/node_modules
     networks:
       - delivery_net
       - traefik-proxy
@@ -102,9 +96,6 @@ services:
       - "3002:3002"           # site do cliente: http://localhost:3002 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
-    volumes:
-      - .:/repo
-      - web_cliente_node_modules:/repo/node_modules
     networks:
       - delivery_net
       - traefik-proxy
@@ -129,9 +120,6 @@ services:
       - "3003:3003"           # painel admin: http://localhost:3003 (local); no VPS o acesso público é via Traefik
     depends_on:
       - api
-    volumes:
-      - .:/repo
-      - web_admin_node_modules:/repo/node_modules
     networks:
       - delivery_net
       - traefik-proxy
@@ -145,10 +133,6 @@ services:
 
 volumes:
   delivery_pgdata:
-  api_node_modules:
-  web_loja_node_modules:
-  web_cliente_node_modules:
-  web_admin_node_modules:
 
 networks:
   delivery_net:
