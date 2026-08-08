@@ -26,6 +26,7 @@ COPY --from=build /repo/node_modules /repo/node_modules
 COPY --from=build /repo/apps/web-cliente/package.json ./package.json
 COPY --from=build /repo/apps/web-cliente/next.config.ts ./next.config.ts
 COPY --from=build /repo/apps/web-cliente/.next ./.next
+COPY --from=build /repo/apps/web-cliente/public ./public
 
 EXPOSE 3002
 CMD ["npm", "run", "start"]

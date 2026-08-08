@@ -24,6 +24,7 @@ COPY --from=build /repo/node_modules /repo/node_modules
 COPY --from=build /repo/apps/web-loja/package.json ./package.json
 COPY --from=build /repo/apps/web-loja/next.config.ts ./next.config.ts
 COPY --from=build /repo/apps/web-loja/.next ./.next
+COPY --from=build /repo/apps/web-loja/public ./public
 
 EXPOSE 3001
 CMD ["npm", "run", "start"]
