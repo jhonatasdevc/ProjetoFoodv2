@@ -11,6 +11,7 @@ import cupomRoutes from "./routes/cupom.js";
 import adminRoutes from "./routes/admin.js";
 import uploadRoutes from "./routes/upload.js";
 import storyRoutes from "./routes/story.js";
+import horarioRoutes from "./routes/horario.js";
 import { initSocket } from "./socket.js";
 import { configurarWebPush } from "./push.js";
 
@@ -37,6 +38,7 @@ await app.register(cupomRoutes, { prefix: "/api" });
 await app.register(adminRoutes, { prefix: "/api" });
 await app.register(uploadRoutes, { prefix: "/api" });
 await app.register(storyRoutes, { prefix: "/api" });
+await app.register(horarioRoutes, { prefix: "/api" });
 
 await app.ready();
 initSocket(app.server, CORS_ORIGIN);

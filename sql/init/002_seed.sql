@@ -23,6 +23,13 @@ INSERT INTO loja (id_grupo, nome, email, senha_hash, telefone, endereco, imagem_
   (5, 'Sabor Caseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600', 'https://picsum.photos/seed/sabor-caseiro-perfil/200/200', 'pago', 5.50, true),
   (6, 'Verde Vida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600', 'https://picsum.photos/seed/verde-vida-perfil/200/200', 'gratis', null, true);
 
+-- Lojas de exemplo abertas todo santo dia, 24h — só pra não bloquear pedido nas demos
+-- dependendo da hora que alguém for testar. Loja de verdade configura isso em /horarios.
+INSERT INTO horario_funcionamento (id_loja, dia_semana, abre_em, fecha_em, fechado)
+SELECT loja.id, dia.n, '00:00', '23:59', false
+FROM loja
+CROSS JOIN generate_series(0, 6) AS dia(n);
+
 INSERT INTO categoria (id_loja, nome, ordem) VALUES
   (1, 'Pizzas', 1),
   (1, 'Bebidas', 2),

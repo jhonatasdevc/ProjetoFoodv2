@@ -8,7 +8,7 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function ItemCard({ item }: { item: Item }) {
+export function ItemCard({ item, desabilitado }: { item: Item; desabilitado?: boolean }) {
   const { addItem } = useCart();
   const [aberto, setAberto] = useState(false);
   const [quantidade, setQuantidade] = useState(1);
@@ -60,7 +60,8 @@ export function ItemCard({ item }: { item: Item }) {
         </div>
         <button
           onClick={() => setAberto((v) => !v)}
-          className="self-start shrink-0 rounded-full bg-red-600 text-white w-9 h-9 flex items-center justify-center hover:bg-red-700"
+          disabled={desabilitado}
+          className="self-start shrink-0 rounded-full bg-red-600 text-white w-9 h-9 flex items-center justify-center hover:bg-red-700 disabled:opacity-40 disabled:hover:bg-red-600"
           aria-label={`Adicionar ${item.nome}`}
         >
           {aberto ? "×" : "+"}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { labelStatusPedido, PEDIDO_STATUS_ORDER, type Pedido } from "@delivery/shared";
 import { getPedido } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { ativarNotificacoes, suportaPush } from "@/lib/push";
+import { ativarNotificacoes, ehIOS, estaInstalado, suportaPush } from "@/lib/push";
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -14,12 +14,26 @@ function BotaoAtivarNotificacoes() {
   const { auth } = useAuth();
   const [estado, setEstado] = useState<"idle" | "ativando" | "ativado" | "erro">("idle");
   const [erro, setErro] = useState<string | null>(null);
+  const [precisaInstalar, setPrecisaInstalar] = useState(false);
 
   useEffect(() => {
     if (suportaPush() && Notification.permission === "granted") setEstado("ativado");
+    else if (!suportaPush() && ehIOS() && !estaInstalado()) setPrecisaInstalar(true);
   }, []);
 
-  if (!auth || !suportaPush() || estado === "ativado") return null;
+  if (!auth || estado === "ativado") return null;
+
+  if (precisaInstalar) {
+    return (
+      <div className="mt-4 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">
+        📲 Pra receber notificações no iPhone, toque em <strong>Compartilhar</strong> e depois em{" "}
+        <strong>Adicionar à Tela de Início</strong>. Abrindo o app por esse ícone, o botão de notificação aparece
+        aqui.
+      </div>
+    );
+  }
+
+  if (!suportaPush()) return null;
 
   async function handleClick() {
     if (!auth) return;

@@ -30,6 +30,9 @@ export function NavBar() {
           <Link href="/stories" className={pathname === "/stories" ? "text-green-700 font-medium" : "text-gray-600"}>
             Stories
           </Link>
+          <Link href="/horarios" className={pathname === "/horarios" ? "text-green-700 font-medium" : "text-gray-600"}>
+            Horários
+          </Link>
           <Link href="/perfil" className={pathname === "/perfil" ? "text-green-700 font-medium" : "text-gray-600"}>
             Perfil
           </Link>

@@ -43,6 +43,37 @@ export interface Loja {
   tipoEntrega: TipoEntrega;
   valorFrete: number | null;
   ativo: boolean;
+  // Só vem preenchido nas rotas públicas voltadas pro cliente (GET /lojas/:id, cardápio,
+  // grupos) — nas telas de admin/loja não é calculado.
+  abertaAgora?: boolean;
+}
+
+export interface HorarioFuncionamento {
+  diaSemana: number;
+  abreEm: string | null;
+  fechaEm: string | null;
+  fechado: boolean;
+}
+
+export interface AtualizarHorarioInput {
+  diaSemana: number;
+  abreEm: string | null;
+  fechaEm: string | null;
+  fechado: boolean;
+}
+
+export interface FechamentoTemporario {
+  id: number;
+  inicio: string;
+  fim: string;
+  motivo: string | null;
+  criadoEm: string;
+}
+
+export interface NovoFechamentoInput {
+  inicio: string;
+  fim: string;
+  motivo?: string;
 }
 
 export interface AtualizarLojaInput {
@@ -328,6 +359,9 @@ export interface NovaPushSubscriptionInput {
     auth: string;
   };
 }
+
+// Índice = dia_semana no banco (0=domingo, igual ao Date.getDay() do JS).
+export const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 
 export const SOCKET_EVENTS = {
   PEDIDO_CRIADO: "pedido:criado",

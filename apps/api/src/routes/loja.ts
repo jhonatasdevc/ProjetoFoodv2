@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { assinarTokenLoja, exigirAuthLoja } from "../auth.js";
-import { serializeLoja } from "../serializers.js";
+import { serializeLoja, serializeLojaComHorario } from "../serializers.js";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -22,11 +22,14 @@ export default async function lojaRoutes(app: FastifyInstance) {
   // GET público — usado pelo web-cliente pra montar a tela /loja/{id}
   app.get("/lojas/:id", async (req, reply) => {
     const id = Number((req.params as { id: string }).id);
-    const loja = await prisma.loja.findUnique({ where: { id } });
+    const loja = await prisma.loja.findUnique({
+      where: { id },
+      include: { horarios: true, fechamentos: true },
+    });
     if (!loja || !loja.ativo) {
       return reply.code(404).send({ erro: "Loja não encontrada" });
     }
-    return serializeLoja(loja);
+    return serializeLojaComHorario(loja);
   });
 
   app.post("/loja/login", async (req, reply) => {

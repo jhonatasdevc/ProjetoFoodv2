@@ -1,11 +1,15 @@
 import type {
+  AtualizarHorarioInput,
   AtualizarLojaInput,
   Categoria,
   CardapioResponse,
+  FechamentoTemporario,
+  HorarioFuncionamento,
   Item,
   Loja,
   LoginLojaInput,
   LoginLojaResponse,
+  NovoFechamentoInput,
   NovoStoryInput,
   Pedido,
   PedidoStatus,
@@ -113,4 +117,24 @@ export function criarStory(token: string, dados: NovoStoryInput): Promise<Story>
 
 export function excluirStory(token: string, id: number): Promise<void> {
   return request(`/api/loja/stories/${id}`, token, { method: "DELETE" });
+}
+
+export function getHorarios(token: string): Promise<{ horarios: HorarioFuncionamento[]; abertaAgora: boolean }> {
+  return request("/api/loja/horarios", token);
+}
+
+export function salvarHorarios(token: string, horarios: AtualizarHorarioInput[]): Promise<HorarioFuncionamento[]> {
+  return request("/api/loja/horarios", token, { method: "PUT", body: JSON.stringify(horarios) });
+}
+
+export function listFechamentos(token: string): Promise<FechamentoTemporario[]> {
+  return request("/api/loja/fechamentos", token);
+}
+
+export function criarFechamento(token: string, dados: NovoFechamentoInput): Promise<FechamentoTemporario> {
+  return request("/api/loja/fechamentos", token, { method: "POST", body: JSON.stringify(dados) });
+}
+
+export function excluirFechamento(token: string, id: number): Promise<void> {
+  return request(`/api/loja/fechamentos/${id}`, token, { method: "DELETE" });
 }

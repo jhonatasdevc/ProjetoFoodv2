@@ -39,6 +39,11 @@ function RestaurantesRow({ lojas }: { lojas: Loja[] }) {
                 <img src={loja.imagemUrl} alt={loja.nome} className="absolute inset-0 w-full h-full object-cover" />
               )}
               <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent" />
+              {loja.abertaAgora === false && (
+                <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+                  Fechada
+                </span>
+              )}
               <span className="absolute left-2 right-2 bottom-2 text-white font-semibold text-sm leading-tight">
                 {loja.nome}
               </span>

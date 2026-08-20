@@ -5,7 +5,9 @@ import type {
   Cupom,
   Endereco,
   Favorito,
+  FechamentoTemporario,
   Grupo,
+  HorarioFuncionamento,
   Item,
   ItemComplemento,
   Loja,
@@ -17,6 +19,7 @@ import type {
   TipoEntrega,
   Usuario,
 } from "@delivery/shared";
+import { lojaEstaAberta } from "./horario.js";
 
 const num = (v: Prisma.Decimal | number) => Number(v);
 
@@ -48,19 +51,58 @@ export function serializeLoja(loja: {
   };
 }
 
+export function serializeHorario(h: {
+  diaSemana: number;
+  abreEm: string | null;
+  fechaEm: string | null;
+  fechado: boolean;
+}): HorarioFuncionamento {
+  return { diaSemana: h.diaSemana, abreEm: h.abreEm, fechaEm: h.fechaEm, fechado: h.fechado };
+}
+
+export function serializeFechamento(f: {
+  id: number;
+  inicio: Date;
+  fim: Date;
+  motivo: string | null;
+  criadoEm: Date;
+}): FechamentoTemporario {
+  return {
+    id: f.id,
+    inicio: f.inicio.toISOString(),
+    fim: f.fim.toISOString(),
+    motivo: f.motivo,
+    criadoEm: f.criadoEm.toISOString(),
+  };
+}
+
+// Igual serializeLoja, mas também calcula abertaAgora a partir do horário semanal +
+// fechamentos temporários — usado nas rotas públicas que o cliente consulta.
+export function serializeLojaComHorario(
+  loja: Parameters<typeof serializeLoja>[0] & {
+    horarios: { diaSemana: number; abreEm: string | null; fechaEm: string | null; fechado: boolean }[];
+    fechamentos: { inicio: Date; fim: Date }[];
+  },
+): Loja {
+  return {
+    ...serializeLoja(loja),
+    abertaAgora: lojaEstaAberta(loja.horarios, loja.fechamentos),
+  };
+}
+
 export function serializeGrupo(grupo: {
   id: number;
   nome: string;
   ordem: number;
   ativo: boolean;
-  lojas: Parameters<typeof serializeLoja>[0][];
+  lojas: Parameters<typeof serializeLojaComHorario>[0][];
 }): Grupo {
   return {
     id: grupo.id,
     nome: grupo.nome,
     ordem: grupo.ordem,
     ativo: grupo.ativo,
-    lojas: grupo.lojas.map(serializeLoja),
+    lojas: grupo.lojas.map(serializeLojaComHorario),
   };
 }
 

@@ -51,6 +51,36 @@ CREATE TABLE loja (
   CONSTRAINT loja_tipo_entrega_check CHECK (tipo_entrega IN ('gratis','pago','retirada'))
 );
 
+-- Uma linha por dia da semana (0=domingo .. 6=sábado) por loja. "fechado=true" ignora
+-- abre_em/fecha_em. Sem linha pro dia = loja não configurou esse dia (tratado como fechado).
+-- abre_em/fecha_em em formato "HH:MM" (texto simples, sem TIME nativo do Postgres —
+-- mais fácil de manipular no client e no formulário do que lidar com timezone/data
+-- fantasma que o driver anexa a colunas TIME).
+CREATE TABLE horario_funcionamento (
+  id              SERIAL PRIMARY KEY,
+  id_loja         INTEGER NOT NULL REFERENCES loja(id) ON DELETE CASCADE,
+  dia_semana      SMALLINT NOT NULL,
+  abre_em         VARCHAR(5),
+  fecha_em        VARCHAR(5),
+  fechado         BOOLEAN NOT NULL DEFAULT false,
+  CONSTRAINT horario_funcionamento_loja_dia_unique UNIQUE (id_loja, dia_semana),
+  CONSTRAINT horario_funcionamento_dia_check CHECK (dia_semana BETWEEN 0 AND 6)
+);
+
+-- Fechamento temporário (férias, manutenção etc.) — enquanto "agora" estiver entre
+-- inicio e fim, a loja aparece fechada pro cliente independente do horário semanal.
+CREATE TABLE fechamento_temporario (
+  id              SERIAL PRIMARY KEY,
+  id_loja         INTEGER NOT NULL REFERENCES loja(id) ON DELETE CASCADE,
+  inicio          TIMESTAMP NOT NULL,
+  fim             TIMESTAMP NOT NULL,
+  motivo          VARCHAR(200),
+  criado_em       TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_horario_funcionamento_loja ON horario_funcionamento(id_loja);
+CREATE INDEX idx_fechamento_temporario_loja ON fechamento_temporario(id_loja);
+
 -- Story some sozinho das consultas 24h depois de criado (filtro por criado_em nas rotas).
 CREATE TABLE story (
   id              SERIAL PRIMARY KEY,

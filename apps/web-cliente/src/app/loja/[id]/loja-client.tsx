@@ -18,11 +18,13 @@ function CartBar({
   tipoEntrega,
   valorFrete,
   enderecoLoja,
+  fechada,
 }: {
   idLoja: number;
   tipoEntrega: TipoEntrega;
   valorFrete: number | null;
   enderecoLoja: string | null;
+  fechada: boolean;
 }) {
   const { itemCount, total } = useCart();
   const [checkoutAberto, setCheckoutAberto] = useState(false);
@@ -46,12 +48,13 @@ function CartBar({
       <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t border-red-100 z-10">
         <button
           onClick={() => setCheckoutAberto(true)}
-          className="w-full max-w-md mx-auto flex justify-between items-center bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700"
+          disabled={fechada}
+          className="w-full max-w-md mx-auto flex justify-between items-center bg-red-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:hover:bg-red-600"
         >
           <span>
             {itemCount} {itemCount === 1 ? "item" : "itens"}
           </span>
-          <span>Ver carrinho — {formatBRL(total)}</span>
+          <span>{fechada ? "Loja fechada" : `Ver carrinho — ${formatBRL(total)}`}</span>
         </button>
       </div>
       {checkoutAberto && (
@@ -94,6 +97,8 @@ function BotaoFavoritar({ idLoja }: { idLoja: number }) {
 }
 
 function Cardapio({ data }: { data: CardapioResponse }) {
+  const fechada = data.loja.abertaAgora === false;
+
   return (
     <div className="max-w-2xl mx-auto pb-40">
       {data.loja.imagemUrl && (
@@ -111,9 +116,18 @@ function Cardapio({ data }: { data: CardapioResponse }) {
               data.loja.valorFrete != null &&
               `Frete ${formatBRL(data.loja.valorFrete)}`}
           </p>
+          <p className={`text-sm mt-1 font-medium ${fechada ? "text-red-600" : "text-green-700"}`}>
+            {fechada ? "Fechada no momento" : "Aberta agora"}
+          </p>
         </div>
         <BotaoFavoritar idLoja={data.loja.id} />
       </header>
+
+      {fechada && (
+        <div className="mx-4 mb-4 border border-red-200 bg-red-50 text-red-700 text-sm rounded-lg p-3">
+          Essa loja está fechada no momento. Você pode ver o cardápio, mas não é possível fazer pedidos agora.
+        </div>
+      )}
 
       <div className="px-4">
         {data.categorias.map((categoria) => (
@@ -121,7 +135,7 @@ function Cardapio({ data }: { data: CardapioResponse }) {
             <h2 className="text-lg font-semibold text-green-700 mb-3">{categoria.nome}</h2>
             <div className="space-y-3">
               {categoria.itens.map((item) => (
-                <ItemCard key={item.id} item={item} />
+                <ItemCard key={item.id} item={item} desabilitado={fechada} />
               ))}
             </div>
           </section>
@@ -133,6 +147,7 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         tipoEntrega={data.loja.tipoEntrega}
         valorFrete={data.loja.valorFrete}
         enderecoLoja={data.loja.endereco}
+        fechada={fechada}
       />
     </div>
   );

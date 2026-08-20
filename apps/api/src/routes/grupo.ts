@@ -15,7 +15,7 @@ export default async function grupoRoutes(app: FastifyInstance) {
     const grupos = await prisma.grupo.findMany({
       where: { ativo: true },
       orderBy: { ordem: "asc" },
-      include: { lojas: { where: { ativo: true } } },
+      include: { lojas: { where: { ativo: true }, include: { horarios: true, fechamentos: true } } },
     });
     return grupos.map(serializeGrupo);
   });

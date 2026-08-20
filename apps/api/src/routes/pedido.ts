@@ -6,6 +6,7 @@ import { exigirAuthLoja, exigirAuthUsuario } from "../auth.js";
 import { serializePedido } from "../serializers.js";
 import { emitirPedidoAtualizado, emitirPedidoCriado } from "../socket.js";
 import { enviarPushParaUsuario } from "../push.js";
+import { lojaEstaAberta } from "../horario.js";
 import { validarCupom } from "./cupom.js";
 
 const criarPedidoSchema = z.object({
@@ -51,8 +52,14 @@ export default async function pedidoRoutes(app: FastifyInstance) {
     const usuario = await prisma.usuario.findUnique({ where: { id: req.usuario!.idUsuario } });
     if (!usuario) return reply.code(404).send({ erro: "Usuário não encontrado" });
 
-    const loja = await prisma.loja.findUnique({ where: { id: input.idLoja } });
+    const loja = await prisma.loja.findUnique({
+      where: { id: input.idLoja },
+      include: { horarios: true, fechamentos: true },
+    });
     if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
+    if (!lojaEstaAberta(loja.horarios, loja.fechamentos)) {
+      return reply.code(400).send({ erro: "Loja fechada no momento" });
+    }
 
     const retirada = loja.tipoEntrega === "retirada";
 

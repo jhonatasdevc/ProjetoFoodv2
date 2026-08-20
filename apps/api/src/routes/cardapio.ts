@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { exigirAuthLoja } from "../auth.js";
-import { serializeCategoria, serializeItem, serializeLoja } from "../serializers.js";
+import { serializeCategoria, serializeItem, serializeLojaComHorario } from "../serializers.js";
 
 const categoriaSchema = z.object({
   nome: z.string().min(1),
@@ -28,7 +28,10 @@ export default async function cardapioRoutes(app: FastifyInstance) {
   // Cardápio completo (loja + categorias + itens + complementos) — usado pelo web-cliente
   app.get("/lojas/:id/cardapio", async (req, reply) => {
     const idLoja = Number((req.params as { id: string }).id);
-    const loja = await prisma.loja.findUnique({ where: { id: idLoja } });
+    const loja = await prisma.loja.findUnique({
+      where: { id: idLoja },
+      include: { horarios: true, fechamentos: true },
+    });
     if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
 
     const categorias = await prisma.categoria.findMany({
@@ -38,7 +41,7 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     });
 
     return {
-      loja: serializeLoja(loja),
+      loja: serializeLojaComHorario(loja),
       categorias: categorias.map(serializeCategoria),
     };
   });

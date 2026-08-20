@@ -59,8 +59,35 @@ model Loja {
   pedidos    Pedido[]
   stories    Story[]
   favoritos  Favorito[]
+  horarios   HorarioFuncionamento[]
+  fechamentos FechamentoTemporario[]
 
   @@map("loja")
+}
+
+model HorarioFuncionamento {
+  id         Int      @id @default(autoincrement())
+  idLoja     Int      @map("id_loja")
+  diaSemana  Int      @map("dia_semana")
+  abreEm     String?  @map("abre_em") @db.VarChar(5)
+  fechaEm    String?  @map("fecha_em") @db.VarChar(5)
+  fechado    Boolean  @default(false)
+  loja       Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@unique([idLoja, diaSemana])
+  @@map("horario_funcionamento")
+}
+
+model FechamentoTemporario {
+  id        Int      @id @default(autoincrement())
+  idLoja    Int      @map("id_loja")
+  inicio    DateTime
+  fim       DateTime
+  motivo    String?  @db.VarChar(200)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  loja      Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("fechamento_temporario")
 }
 
 model Story {
