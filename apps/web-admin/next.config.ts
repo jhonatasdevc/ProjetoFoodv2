@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // Sem isso, o servidor de dev do Next bloqueia requisições (incluindo o
   // WebSocket do HMR) vindas de fora de localhost — página fica em branco
   // quando servida atrás do Traefik num domínio público.
-  allowedDevOrigins: ["admin.flowdevelop.com.br"],
+  allowedDevOrigins: ["admin.eazyclub.com.br"],
 };
 
 export default nextConfig;

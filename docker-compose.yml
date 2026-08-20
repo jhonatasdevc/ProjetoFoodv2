@@ -42,10 +42,10 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-delivery}:${DB_PASSWORD:-delivery123}@db:5432/${DB_NAME:-delivery_db}
       API_PORT: 3333
       JWT_SECRET: ${JWT_SECRET:-troque_esse_segredo_em_producao}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://pedidos.flowdevelop.com.br,https://loja.flowdevelop.com.br,https://admin.flowdevelop.com.br}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://pedidos.eazyclub.com.br,https://loja.eazyclub.com.br,https://admin.eazyclub.com.br}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-troque_esta_chave_vapid_publica}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-troque_esta_chave_vapid_privada}
-      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contato@flowdevelop.com.br}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contato@eazyclub.com.br}
       NODE_ENV: production
     ports:
       - "3333:3333"           # API + Socket.io: http://localhost:3333 (local); no VPS o acesso público é via Traefik
@@ -58,7 +58,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-proxy
-      - traefik.http.routers.delivery-api.rule=Host(`${API_DOMAIN:-api.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-api.rule=Host(`${API_DOMAIN:-api.eazyclub.com.br}`)
       - traefik.http.routers.delivery-api.entrypoints=websecure
       - traefik.http.routers.delivery-api.tls.certresolver=letsencrypt
       - traefik.http.services.delivery-api.loadbalancer.server.port=3333
@@ -68,7 +68,7 @@ services:
       context: .
       dockerfile: apps/web-loja/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.eazyclub.com.br}
     container_name: delivery_web_loja
     restart: unless-stopped
     environment:
@@ -84,7 +84,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-proxy
-      - traefik.http.routers.delivery-web-loja.rule=Host(`${WEB_LOJA_DOMAIN:-loja.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-loja.rule=Host(`${WEB_LOJA_DOMAIN:-loja.eazyclub.com.br}`)
       - traefik.http.routers.delivery-web-loja.entrypoints=websecure
       - traefik.http.routers.delivery-web-loja.tls.certresolver=letsencrypt
       - traefik.http.services.delivery-web-loja.loadbalancer.server.port=3001
@@ -94,7 +94,7 @@ services:
       context: .
       dockerfile: apps/web-cliente/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.eazyclub.com.br}
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-troque_esta_chave_vapid_publica}
     container_name: delivery_web_cliente
     restart: unless-stopped
@@ -112,7 +112,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-proxy
-      - traefik.http.routers.delivery-web-cliente.rule=Host(`${WEB_CLIENTE_DOMAIN:-pedidos.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-cliente.rule=Host(`${WEB_CLIENTE_DOMAIN:-pedidos.eazyclub.com.br}`)
       - traefik.http.routers.delivery-web-cliente.entrypoints=websecure
       - traefik.http.routers.delivery-web-cliente.tls.certresolver=letsencrypt
       - traefik.http.services.delivery-web-cliente.loadbalancer.server.port=3002
@@ -122,7 +122,7 @@ services:
       context: .
       dockerfile: apps/web-admin/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.flowdevelop.com.br}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.eazyclub.com.br}
     container_name: delivery_web_admin
     restart: unless-stopped
     environment:
@@ -138,7 +138,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-proxy
-      - traefik.http.routers.delivery-web-admin.rule=Host(`${WEB_ADMIN_DOMAIN:-admin.flowdevelop.com.br}`)
+      - traefik.http.routers.delivery-web-admin.rule=Host(`${WEB_ADMIN_DOMAIN:-admin.eazyclub.com.br}`)
       - traefik.http.routers.delivery-web-admin.entrypoints=websecure
       - traefik.http.routers.delivery-web-admin.tls.certresolver=letsencrypt
       - traefik.http.services.delivery-web-admin.loadbalancer.server.port=3003

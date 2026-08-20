@@ -6,7 +6,7 @@ let configurado = false;
 export function configurarWebPush() {
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT ?? "mailto:contato@flowdevelop.com.br";
+  const subject = process.env.VAPID_SUBJECT ?? "mailto:contato@eazyclub.com.br";
 
   if (!publicKey || !privateKey || publicKey.startsWith("troque_")) {
     console.warn("VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY não configurados — push notification desativado.");
