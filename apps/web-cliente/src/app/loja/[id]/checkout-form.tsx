@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { CriarPedidoInput, Endereco, TipoEntrega } from "@delivery/shared";
+import type { CriarPedidoInput, Endereco, TipoEntregaPedido, TipoFrete } from "@delivery/shared";
 import { criarPedido, listEnderecos, validarCupom } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useCart, type CartLine } from "@/lib/cart-context";
@@ -78,14 +78,18 @@ function ItensCarrinho({
 
 export function CheckoutForm({
   idLoja,
-  tipoEntrega,
+  aceitaEntrega,
+  tipoFrete,
   valorFrete,
+  aceitaRetirada,
   enderecoLoja,
   onClose,
 }: {
   idLoja: number;
-  tipoEntrega: TipoEntrega;
+  aceitaEntrega: boolean;
+  tipoFrete: TipoFrete;
   valorFrete: number | null;
+  aceitaRetirada: boolean;
   enderecoLoja: string | null;
   onClose: () => void;
 }) {
@@ -119,8 +123,10 @@ export function CheckoutForm({
   return (
     <CheckoutLogado
       idLoja={idLoja}
-      tipoEntrega={tipoEntrega}
+      aceitaEntrega={aceitaEntrega}
+      tipoFrete={tipoFrete}
       valorFrete={valorFrete}
+      aceitaRetirada={aceitaRetirada}
       enderecoLoja={enderecoLoja}
       onClose={onClose}
       token={auth.token}
@@ -135,8 +141,10 @@ export function CheckoutForm({
 
 function CheckoutLogado({
   idLoja,
-  tipoEntrega,
+  aceitaEntrega,
+  tipoFrete,
   valorFrete,
+  aceitaRetirada,
   enderecoLoja,
   onClose,
   token,
@@ -147,8 +155,10 @@ function CheckoutLogado({
   removeLine,
 }: {
   idLoja: number;
-  tipoEntrega: TipoEntrega;
+  aceitaEntrega: boolean;
+  tipoFrete: TipoFrete;
   valorFrete: number | null;
+  aceitaRetirada: boolean;
   enderecoLoja: string | null;
   onClose: () => void;
   token: string;
@@ -159,7 +169,10 @@ function CheckoutLogado({
   removeLine: (key: string) => void;
 }) {
   const router = useRouter();
-  const retirada = tipoEntrega === "retirada";
+  // Se a loja aceita as duas, o cliente escolhe (padrão: entrega). Se só aceita uma, usa
+  // essa direto, sem mostrar seletor.
+  const [modoEntrega, setModoEntrega] = useState<TipoEntregaPedido>(aceitaEntrega ? "entrega" : "retirada");
+  const retirada = modoEntrega === "retirada";
   const [enderecos, setEnderecos] = useState<Endereco[] | null>(null);
   const [idEndereco, setIdEndereco] = useState<number | null>(null);
   const [cupomInput, setCupomInput] = useState("");
@@ -199,7 +212,7 @@ function CheckoutLogado({
     }
   }
 
-  const valorFreteCobrado = tipoEntrega === "pago" ? (valorFrete ?? 0) : 0;
+  const valorFreteCobrado = !retirada && tipoFrete === "pago" ? (valorFrete ?? 0) : 0;
   const totalComDesconto = total - (cupomAplicado?.valorDesconto ?? 0) + valorFreteCobrado;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -210,6 +223,7 @@ function CheckoutLogado({
     try {
       const pedido = await criarPedido(token, {
         idLoja,
+        tipoEntrega: modoEntrega,
         idEndereco: retirada ? undefined : (idEndereco ?? undefined),
         cupomCodigo: cupomAplicado?.codigo,
         formaPagamento,
@@ -244,6 +258,32 @@ function CheckoutLogado({
         </div>
 
         <ItensCarrinho lines={lines} changeQuantity={changeQuantity} removeLine={removeLine} />
+
+        {aceitaEntrega && aceitaRetirada && (
+          <div>
+            <label className="block text-sm text-gray-700 mb-2">Como você quer receber?</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setModoEntrega("entrega")}
+                className={`text-sm font-medium py-2 rounded-lg border ${
+                  modoEntrega === "entrega" ? "bg-red-600 border-red-600 text-white" : "border-gray-300 text-gray-700"
+                }`}
+              >
+                Entrega
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoEntrega("retirada")}
+                className={`text-sm font-medium py-2 rounded-lg border ${
+                  modoEntrega === "retirada" ? "bg-red-600 border-red-600 text-white" : "border-gray-300 text-gray-700"
+                }`}
+              >
+                Retirada
+              </button>
+            </div>
+          </div>
+        )}
 
         {retirada ? (
           <div className="border border-green-200 bg-green-50 rounded-lg p-3">
@@ -340,7 +380,7 @@ function CheckoutLogado({
           </div>
           <div className="flex justify-between text-gray-600">
             <span>Frete</span>
-            <span>{retirada ? "Retirada no local" : tipoEntrega === "gratis" ? "Grátis" : formatBRL(valorFreteCobrado)}</span>
+            <span>{retirada ? "Retirada no local" : tipoFrete === "gratis" ? "Grátis" : formatBRL(valorFreteCobrado)}</span>
           </div>
           {cupomAplicado && (
             <div className="flex justify-between text-green-700">

@@ -20,13 +20,16 @@ export const PEDIDO_STATUS_LABEL: Record<PedidoStatus, string> = {
   cancelado: "Cancelado",
 };
 
-// gratis/pago = entrega pela loja (frete grátis ou com valor); retirada = "clique e retire",
-// cliente busca o pedido no endereço da loja (sem endereço de entrega no checkout).
-export type TipoEntrega = "gratis" | "pago" | "retirada";
+// Como a loja cobra a entrega — só é relevante quando a loja aceita entrega (aceitaEntrega).
+export type TipoFrete = "gratis" | "pago";
+
+// O que o CLIENTE escolheu num pedido específico — a loja pode aceitar entrega e retirada
+// ao mesmo tempo (não é exclusivo), então essa escolha é por pedido, não da loja.
+export type TipoEntregaPedido = "entrega" | "retirada";
 
 // Pro pedido de retirada, "saiu para entrega" não faz sentido — o rótulo vira "Pedido pronto"
 // (pronto pra o cliente buscar). Usado em qualquer tela que mostre o status de um pedido.
-export function labelStatusPedido(status: PedidoStatus, tipoEntrega: TipoEntrega): string {
+export function labelStatusPedido(status: PedidoStatus, tipoEntrega: TipoEntregaPedido): string {
   if (tipoEntrega === "retirada" && status === "saiu_entrega") return "Pedido pronto";
   return PEDIDO_STATUS_LABEL[status];
 }
@@ -40,8 +43,12 @@ export interface Loja {
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
-  tipoEntrega: TipoEntrega;
+  // Entrega e retirada não são exclusivas — a loja pode oferecer as duas ao mesmo tempo,
+  // e o cliente escolhe no checkout (ver CriarPedidoInput.tipoEntrega).
+  aceitaEntrega: boolean;
+  tipoFrete: TipoFrete;
   valorFrete: number | null;
+  aceitaRetirada: boolean;
   ativo: boolean;
   // Só vem preenchido nas rotas públicas voltadas pro cliente (GET /lojas/:id, cardápio,
   // grupos) — nas telas de admin/loja não é calculado.
@@ -79,8 +86,10 @@ export interface NovoFechamentoInput {
 export interface AtualizarLojaInput {
   imagemUrl?: string | null;
   imagemPerfilUrl?: string | null;
-  tipoEntrega?: TipoEntrega;
+  aceitaEntrega?: boolean;
+  tipoFrete?: TipoFrete;
   valorFrete?: number | null;
+  aceitaRetirada?: boolean;
   ativo?: boolean;
 }
 
@@ -138,6 +147,7 @@ export interface PedidoItemInput {
 
 export interface CriarPedidoInput {
   idLoja: number;
+  tipoEntrega: TipoEntregaPedido;
   idEndereco?: number;
   cupomCodigo?: string;
   formaPagamento: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito";
@@ -177,7 +187,7 @@ export interface Pedido {
   total: number;
   valorDesconto: number;
   valorFrete: number;
-  tipoEntrega: TipoEntrega;
+  tipoEntrega: TipoEntregaPedido;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;

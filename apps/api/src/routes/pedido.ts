@@ -11,6 +11,7 @@ import { validarCupom } from "./cupom.js";
 
 const criarPedidoSchema = z.object({
   idLoja: z.number().int(),
+  tipoEntrega: z.enum(["entrega", "retirada"]),
   idEndereco: z.number().int().optional(),
   cupomCodigo: z.string().optional(),
   formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito"]),
@@ -61,7 +62,13 @@ export default async function pedidoRoutes(app: FastifyInstance) {
       return reply.code(400).send({ erro: "Loja fechada no momento" });
     }
 
-    const retirada = loja.tipoEntrega === "retirada";
+    const retirada = input.tipoEntrega === "retirada";
+    if (retirada && !loja.aceitaRetirada) {
+      return reply.code(400).send({ erro: "Essa loja não aceita retirada no local" });
+    }
+    if (!retirada && !loja.aceitaEntrega) {
+      return reply.code(400).send({ erro: "Essa loja não faz entrega" });
+    }
 
     let endereco: Awaited<ReturnType<typeof prisma.endereco.findUnique>> = null;
     if (!retirada) {
@@ -118,7 +125,7 @@ export default async function pedidoRoutes(app: FastifyInstance) {
       ? `Retirada no local — ${loja.endereco ?? loja.nome}`
       : `${endereco!.rua}, ${endereco!.numero}${endereco!.complemento ? ` - ${endereco!.complemento}` : ""} - ${endereco!.cidade}/${endereco!.estado} - CEP ${endereco!.cep}`;
 
-    const valorFrete = loja.tipoEntrega === "pago" ? Number(loja.valorFrete ?? 0) : 0;
+    const valorFrete = !retirada && loja.tipoFrete === "pago" ? Number(loja.valorFrete ?? 0) : 0;
 
     const pedido = await prisma.pedido.create({
       data: {
@@ -134,7 +141,7 @@ export default async function pedidoRoutes(app: FastifyInstance) {
         total: total - valorDesconto + valorFrete,
         valorDesconto,
         valorFrete,
-        tipoEntrega: loja.tipoEntrega,
+        tipoEntrega: input.tipoEntrega,
         itens: { create: pedidoItensData },
         statusHistorico: { create: { status: "recebido" } },
       },

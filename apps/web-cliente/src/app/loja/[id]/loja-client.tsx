@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { CardapioResponse, TipoEntrega } from "@delivery/shared";
+import type { CardapioResponse, TipoFrete } from "@delivery/shared";
 import { getCardapio } from "@/lib/api";
 import { CartProvider, useCart } from "@/lib/cart-context";
 import { useFavoritoLoja } from "@/lib/use-favorito";
@@ -15,14 +15,18 @@ function formatBRL(v: number) {
 
 function CartBar({
   idLoja,
-  tipoEntrega,
+  aceitaEntrega,
+  tipoFrete,
   valorFrete,
+  aceitaRetirada,
   enderecoLoja,
   fechada,
 }: {
   idLoja: number;
-  tipoEntrega: TipoEntrega;
+  aceitaEntrega: boolean;
+  tipoFrete: TipoFrete;
   valorFrete: number | null;
+  aceitaRetirada: boolean;
   enderecoLoja: string | null;
   fechada: boolean;
 }) {
@@ -60,8 +64,10 @@ function CartBar({
       {checkoutAberto && (
         <CheckoutForm
           idLoja={idLoja}
-          tipoEntrega={tipoEntrega}
+          aceitaEntrega={aceitaEntrega}
+          tipoFrete={tipoFrete}
           valorFrete={valorFrete}
+          aceitaRetirada={aceitaRetirada}
           enderecoLoja={enderecoLoja}
           onClose={() => setCheckoutAberto(false)}
         />
@@ -110,11 +116,18 @@ function Cardapio({ data }: { data: CardapioResponse }) {
           <h1 className="text-2xl font-bold text-gray-900">{data.loja.nome}</h1>
           {data.loja.endereco && <p className="text-sm text-gray-500 mt-1">{data.loja.endereco}</p>}
           <p className="text-sm text-green-700 mt-1">
-            {data.loja.tipoEntrega === "gratis" && "Frete grátis"}
-            {data.loja.tipoEntrega === "retirada" && "Clique e retire — sem entrega"}
-            {data.loja.tipoEntrega === "pago" &&
-              data.loja.valorFrete != null &&
-              `Frete ${formatBRL(data.loja.valorFrete)}`}
+            {[
+              data.loja.aceitaEntrega
+                ? data.loja.tipoFrete === "gratis"
+                  ? "Entrega grátis"
+                  : data.loja.valorFrete != null
+                    ? `Entrega ${formatBRL(data.loja.valorFrete)}`
+                    : null
+                : null,
+              data.loja.aceitaRetirada ? "Retirada no local" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
           <p className={`text-sm mt-1 font-medium ${fechada ? "text-red-600" : "text-green-700"}`}>
             {fechada ? "Fechada no momento" : "Aberta agora"}
@@ -144,8 +157,10 @@ function Cardapio({ data }: { data: CardapioResponse }) {
 
       <CartBar
         idLoja={data.loja.id}
-        tipoEntrega={data.loja.tipoEntrega}
+        aceitaEntrega={data.loja.aceitaEntrega}
+        tipoFrete={data.loja.tipoFrete}
         valorFrete={data.loja.valorFrete}
+        aceitaRetirada={data.loja.aceitaRetirada}
         enderecoLoja={data.loja.endereco}
         fechada={fechada}
       />

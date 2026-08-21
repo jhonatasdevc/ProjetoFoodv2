@@ -44,11 +44,17 @@ CREATE TABLE loja (
   endereco           VARCHAR(200),
   imagem_url         VARCHAR(300),
   imagem_perfil_url  VARCHAR(300),
-  tipo_entrega       VARCHAR(20) NOT NULL DEFAULT 'pago',
+  -- aceita_entrega/aceita_retirada não são exclusivos — a loja pode oferecer os dois ao
+  -- mesmo tempo, e o cliente escolhe no checkout. tipo_frete só é usado quando
+  -- aceita_entrega=true (define se a entrega é grátis ou cobra valor_frete).
+  aceita_entrega     BOOLEAN NOT NULL DEFAULT true,
+  tipo_frete         VARCHAR(20) NOT NULL DEFAULT 'pago',
   valor_frete        NUMERIC(10,2),
+  aceita_retirada    BOOLEAN NOT NULL DEFAULT false,
   ativo              BOOLEAN NOT NULL DEFAULT false,
   criado_em          TIMESTAMP NOT NULL DEFAULT now(),
-  CONSTRAINT loja_tipo_entrega_check CHECK (tipo_entrega IN ('gratis','pago','retirada'))
+  CONSTRAINT loja_tipo_frete_check CHECK (tipo_frete IN ('gratis','pago')),
+  CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada)
 );
 
 -- Uma linha por dia da semana (0=domingo .. 6=sábado) por loja. "fechado=true" ignora
@@ -204,11 +210,14 @@ CREATE TABLE pedido (
   total             NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_desconto    NUMERIC(10,2) NOT NULL DEFAULT 0,
   valor_frete       NUMERIC(10,2) NOT NULL DEFAULT 0,
-  tipo_entrega      VARCHAR(20) NOT NULL DEFAULT 'pago',
+  -- o que o CLIENTE escolheu nesse pedido (entrega ou retirada) — não é o mesmo campo
+  -- que a config da loja, já que a loja pode aceitar os dois modos ao mesmo tempo.
+  tipo_entrega      VARCHAR(20) NOT NULL DEFAULT 'entrega',
   observacoes       TEXT,
   criado_em         TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em     TIMESTAMP NOT NULL DEFAULT now(),
-  CONSTRAINT pedido_status_check CHECK (status IN ('recebido','preparando','saiu_entrega','entregue','cancelado'))
+  CONSTRAINT pedido_status_check CHECK (status IN ('recebido','preparando','saiu_entrega','entregue','cancelado')),
+  CONSTRAINT pedido_tipo_entrega_check CHECK (tipo_entrega IN ('entrega','retirada'))
 );
 
 CREATE TABLE pedido_item (

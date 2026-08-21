@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { TipoEntrega } from "@delivery/shared";
+import type { TipoFrete } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { atualizarLojaMe, uploadImagem } from "@/lib/api";
 
-function requisitosFaltando(loja: { imagemUrl: string | null; imagemPerfilUrl: string | null; tipoEntrega: TipoEntrega; valorFrete: number | null }) {
+function requisitosFaltando(loja: {
+  imagemUrl: string | null;
+  imagemPerfilUrl: string | null;
+  aceitaEntrega: boolean;
+  tipoFrete: TipoFrete;
+  valorFrete: number | null;
+  aceitaRetirada: boolean;
+}) {
   const faltando: string[] = [];
   if (!loja.imagemUrl) faltando.push("foto de capa");
   if (!loja.imagemPerfilUrl) faltando.push("foto de perfil");
-  if (loja.tipoEntrega === "pago" && loja.valorFrete == null) faltando.push("valor do frete");
+  if (!loja.aceitaEntrega && !loja.aceitaRetirada) faltando.push("modo de entrega (entrega e/ou retirada)");
+  if (loja.aceitaEntrega && loja.tipoFrete === "pago" && loja.valorFrete == null) faltando.push("valor do frete");
   return faltando;
 }
 
@@ -131,8 +139,10 @@ function PerfilContent() {
   const { auth, atualizarLoja } = useAuth();
   const loja = auth!.loja;
 
-  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>(loja.tipoEntrega);
+  const [aceitaEntrega, setAceitaEntrega] = useState(loja.aceitaEntrega);
+  const [tipoFrete, setTipoFrete] = useState<TipoFrete>(loja.tipoFrete);
   const [valorFrete, setValorFrete] = useState(loja.valorFrete != null ? String(loja.valorFrete) : "");
+  const [aceitaRetirada, setAceitaRetirada] = useState(loja.aceitaRetirada);
   const [salvandoFrete, setSalvandoFrete] = useState(false);
   const [mensagemFrete, setMensagemFrete] = useState<string | null>(null);
   const [erroFrete, setErroFrete] = useState<string | null>(null);
@@ -150,8 +160,10 @@ function PerfilContent() {
     setSalvandoFrete(true);
     try {
       const nova = await atualizarLojaMe(auth.token, {
-        tipoEntrega,
-        valorFrete: tipoEntrega === "pago" ? (valorFrete ? Number(valorFrete) : null) : null,
+        aceitaEntrega,
+        tipoFrete,
+        valorFrete: aceitaEntrega && tipoFrete === "pago" ? (valorFrete ? Number(valorFrete) : null) : null,
+        aceitaRetirada,
       });
       atualizarLoja(nova);
       setMensagemFrete("Frete atualizado.");
@@ -228,56 +240,70 @@ function PerfilContent() {
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Entrega</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Escolha como o cliente recebe o pedido: frete grátis, frete com valor fixo, ou clique e retire (cliente
-          busca no endereço da loja, sem cobrar entrega).
+          Você pode aceitar entrega, retirada no local, ou as duas ao mesmo tempo — o cliente escolhe qual quer usar
+          na hora de fechar o pedido.
         </p>
-        <form onSubmit={handleSalvarFrete} className="space-y-3">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+        <form onSubmit={handleSalvarFrete} className="space-y-4">
+          <div className="border border-gray-200 rounded-lg p-3 space-y-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-900">
               <input
-                type="radio"
-                name="tipoEntrega"
-                checked={tipoEntrega === "gratis"}
-                onChange={() => setTipoEntrega("gratis")}
+                type="checkbox"
+                checked={aceitaEntrega}
+                onChange={(e) => setAceitaEntrega(e.target.checked)}
                 className="accent-red-600"
               />
-              Frete grátis
+              Aceita entrega
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="tipoEntrega"
-                checked={tipoEntrega === "pago"}
-                onChange={() => setTipoEntrega("pago")}
-                className="accent-red-600"
-              />
-              Frete pago
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="radio"
-                name="tipoEntrega"
-                checked={tipoEntrega === "retirada"}
-                onChange={() => setTipoEntrega("retirada")}
-                className="accent-red-600"
-              />
-              Clique e retire (sem entrega)
-            </label>
+            {aceitaEntrega && (
+              <div className="pl-6 space-y-2">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="tipoFrete"
+                    checked={tipoFrete === "gratis"}
+                    onChange={() => setTipoFrete("gratis")}
+                    className="accent-red-600"
+                  />
+                  Frete grátis
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="tipoFrete"
+                    checked={tipoFrete === "pago"}
+                    onChange={() => setTipoFrete("pago")}
+                    className="accent-red-600"
+                  />
+                  Frete pago
+                </label>
+                {tipoFrete === "pago" && (
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Valor do frete (R$)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={valorFrete}
+                      onChange={(e) => setValorFrete(e.target.value)}
+                      placeholder="0,00"
+                      className="w-full border border-gray-300 rounded px-3 py-2"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {tipoEntrega === "pago" && (
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Valor do frete (R$)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={valorFrete}
-                onChange={(e) => setValorFrete(e.target.value)}
-                placeholder="0,00"
-                className="w-full border border-gray-300 rounded px-3 py-2"
-              />
-            </div>
-          )}
+
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-900 border border-gray-200 rounded-lg p-3">
+            <input
+              type="checkbox"
+              checked={aceitaRetirada}
+              onChange={(e) => setAceitaRetirada(e.target.checked)}
+              className="accent-red-600"
+            />
+            Aceita retirada no local (clique e retire)
+          </label>
+
           {mensagemFrete && <p className="text-sm text-green-700">{mensagemFrete}</p>}
           {erroFrete && <p className="text-sm text-red-600">{erroFrete}</p>}
           <button

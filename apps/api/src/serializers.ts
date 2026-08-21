@@ -16,7 +16,8 @@ import type {
   PedidoItemComplemento,
   PedidoStatus,
   Story,
-  TipoEntrega,
+  TipoEntregaPedido,
+  TipoFrete,
   Usuario,
 } from "@delivery/shared";
 import { lojaEstaAberta } from "./horario.js";
@@ -32,8 +33,10 @@ export function serializeLoja(loja: {
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
-  tipoEntrega: string;
+  aceitaEntrega: boolean;
+  tipoFrete: string;
   valorFrete: Prisma.Decimal | number | null;
+  aceitaRetirada: boolean;
   ativo: boolean;
 }): Loja {
   return {
@@ -45,8 +48,10 @@ export function serializeLoja(loja: {
     endereco: loja.endereco,
     imagemUrl: loja.imagemUrl,
     imagemPerfilUrl: loja.imagemPerfilUrl,
-    tipoEntrega: loja.tipoEntrega as TipoEntrega,
+    aceitaEntrega: loja.aceitaEntrega,
+    tipoFrete: loja.tipoFrete as TipoFrete,
     valorFrete: loja.valorFrete != null ? num(loja.valorFrete) : null,
+    aceitaRetirada: loja.aceitaRetirada,
     ativo: loja.ativo,
   };
 }
@@ -321,7 +326,7 @@ export function serializePedido(pedido: {
     total: num(pedido.total),
     valorDesconto: num(pedido.valorDesconto),
     valorFrete: num(pedido.valorFrete),
-    tipoEntrega: pedido.tipoEntrega as TipoEntrega,
+    tipoEntrega: pedido.tipoEntrega as TipoEntregaPedido,
     observacoes: pedido.observacoes,
     criadoEm: pedido.criadoEm.toISOString(),
     atualizadoEm: pedido.atualizadoEm.toISOString(),

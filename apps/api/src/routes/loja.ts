@@ -13,8 +13,10 @@ const loginSchema = z.object({
 const atualizarLojaSchema = z.object({
   imagemUrl: z.string().url().nullable().optional(),
   imagemPerfilUrl: z.string().url().nullable().optional(),
-  tipoEntrega: z.enum(["gratis", "pago", "retirada"]).optional(),
+  aceitaEntrega: z.boolean().optional(),
+  tipoFrete: z.enum(["gratis", "pago"]).optional(),
   valorFrete: z.number().positive().nullable().optional(),
+  aceitaRetirada: z.boolean().optional(),
   ativo: z.boolean().optional(),
 });
 
@@ -55,25 +57,35 @@ export default async function lojaRoutes(app: FastifyInstance) {
     return serializeLoja(loja);
   });
 
-  // PATCH protegido — a própria loja edita seus dados (foto de capa, foto de perfil, frete
-  // e o próprio desbloqueio). "ativo=true" só é aceito se nome, as duas fotos e o frete
-  // (grátis ou com valor definido) já estiverem configurados — senão a loja fica invisível
-  // pro cliente pra sempre por engano.
+  // PATCH protegido — a própria loja edita seus dados (foto de capa, foto de perfil, frete,
+  // retirada e o próprio desbloqueio). Entrega e retirada não são exclusivas — a loja pode
+  // aceitar as duas, mas precisa aceitar pelo menos uma. "ativo=true" só é aceito se nome,
+  // as duas fotos e o modo de entrega já estiverem configurados — senão a loja fica
+  // invisível pro cliente pra sempre por engano.
   app.patch("/loja/me", { preHandler: exigirAuthLoja }, async (req, reply) => {
     const parsed = atualizarLojaSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
 
-    if (parsed.data.ativo === true) {
-      const atual = await prisma.loja.findUnique({ where: { id: req.loja!.idLoja } });
-      if (!atual) return reply.code(404).send({ erro: "Loja não encontrada" });
+    const atual = await prisma.loja.findUnique({ where: { id: req.loja!.idLoja } });
+    if (!atual) return reply.code(404).send({ erro: "Loja não encontrada" });
 
+    const aceitaEntrega = parsed.data.aceitaEntrega !== undefined ? parsed.data.aceitaEntrega : atual.aceitaEntrega;
+    const tipoFrete = parsed.data.tipoFrete !== undefined ? parsed.data.tipoFrete : atual.tipoFrete;
+    const valorFrete = parsed.data.valorFrete !== undefined ? parsed.data.valorFrete : atual.valorFrete;
+    const aceitaRetirada =
+      parsed.data.aceitaRetirada !== undefined ? parsed.data.aceitaRetirada : atual.aceitaRetirada;
+
+    if (!aceitaEntrega && !aceitaRetirada) {
+      return reply.code(400).send({ erro: "A loja precisa aceitar entrega, retirada, ou as duas" });
+    }
+
+    if (parsed.data.ativo === true) {
       const imagemUrl = parsed.data.imagemUrl !== undefined ? parsed.data.imagemUrl : atual.imagemUrl;
       const imagemPerfilUrl =
         parsed.data.imagemPerfilUrl !== undefined ? parsed.data.imagemPerfilUrl : atual.imagemPerfilUrl;
-      const tipoEntrega = parsed.data.tipoEntrega !== undefined ? parsed.data.tipoEntrega : atual.tipoEntrega;
-      const valorFrete = parsed.data.valorFrete !== undefined ? parsed.data.valorFrete : atual.valorFrete;
-      // "pago" exige um valor definido; "gratis"/"retirada" não precisam de valor nenhum.
-      const freteConfigurado = tipoEntrega !== "pago" || valorFrete != null;
+      // "pago" exige um valor definido; "gratis" não precisa, e nenhum dos dois importa
+      // se a loja não aceita entrega.
+      const freteConfigurado = !aceitaEntrega || tipoFrete !== "pago" || valorFrete != null;
 
       if (!atual.nome || !imagemUrl || !imagemPerfilUrl || !freteConfigurado) {
         return reply.code(400).send({
