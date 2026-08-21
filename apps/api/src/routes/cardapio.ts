@@ -17,11 +17,21 @@ const itemSchema = z.object({
   precoPromocional: z.number().positive().nullable().optional(),
   imagemUrl: z.string().url().nullable().optional(),
   disponivel: z.boolean().optional(),
+  destaque: z.boolean().optional(),
 });
+
+const MAX_ITENS_DESTAQUE = 3;
 
 async function categoriaPertenceALoja(idCategoria: number, idLoja: number) {
   const categoria = await prisma.categoria.findUnique({ where: { id: idCategoria } });
   return categoria?.idLoja === idLoja;
+}
+
+async function podeDestacar(idLoja: number, idItemAtual?: number) {
+  const count = await prisma.item.count({
+    where: { destaque: true, categoria: { idLoja }, ...(idItemAtual ? { id: { not: idItemAtual } } : {}) },
+  });
+  return count < MAX_ITENS_DESTAQUE;
 }
 
 export default async function cardapioRoutes(app: FastifyInstance) {
@@ -90,6 +100,9 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     if (!(await categoriaPertenceALoja(parsed.data.idCategoria, req.loja!.idLoja))) {
       return reply.code(403).send({ erro: "Categoria não pertence a essa loja" });
     }
+    if (parsed.data.destaque && !(await podeDestacar(req.loja!.idLoja))) {
+      return reply.code(400).send({ erro: `Máximo de ${MAX_ITENS_DESTAQUE} itens em destaque` });
+    }
 
     const item = await prisma.item.create({
       data: parsed.data,
@@ -106,6 +119,9 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     }
     const parsed = itemSchema.partial().safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ erro: "Dados inválidos" });
+    if (parsed.data.destaque && !existente.destaque && !(await podeDestacar(req.loja!.idLoja))) {
+      return reply.code(400).send({ erro: `Máximo de ${MAX_ITENS_DESTAQUE} itens em destaque` });
+    }
 
     const item = await prisma.item.update({
       where: { id },

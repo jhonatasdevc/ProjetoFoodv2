@@ -115,6 +115,10 @@ CREATE TABLE item (
   preco_promocional NUMERIC(10,2),
   imagem_url      VARCHAR(300),
   disponivel      BOOLEAN NOT NULL DEFAULT true,
+  -- Máx. 3 por loja em destaque, mostrados numa seção separada pro cliente — validado na
+  -- API (contagem entre itens de todas as categorias da loja), não dá pra expressar isso
+  -- num CHECK simples do Postgres.
+  destaque        BOOLEAN NOT NULL DEFAULT false,
   criado_em       TIMESTAMP NOT NULL DEFAULT now()
 );
 

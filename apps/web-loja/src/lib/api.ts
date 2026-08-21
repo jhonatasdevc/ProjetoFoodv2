@@ -64,9 +64,16 @@ export async function uploadImagem(token: string, arquivo: File): Promise<{ url:
   return res.json();
 }
 
-export function listPedidos(token: string, status?: PedidoStatus): Promise<Pedido[]> {
-  const qs = status ? `?status=${status}` : "";
-  return request(`/api/pedidos${qs}`, token);
+export function listPedidos(
+  token: string,
+  filtros?: { status?: PedidoStatus; de?: string; ate?: string },
+): Promise<Pedido[]> {
+  const params = new URLSearchParams();
+  if (filtros?.status) params.set("status", filtros.status);
+  if (filtros?.de) params.set("de", filtros.de);
+  if (filtros?.ate) params.set("ate", filtros.ate);
+  const qs = params.toString();
+  return request(`/api/pedidos${qs ? `?${qs}` : ""}`, token);
 }
 
 export function avancarStatusPedido(token: string, id: number, status: PedidoStatus): Promise<Pedido> {
@@ -93,6 +100,7 @@ export interface NovoItemInput {
   precoPromocional?: number | null;
   imagemUrl?: string | null;
   disponivel?: boolean;
+  destaque?: boolean;
 }
 
 export function criarItem(token: string, dados: NovoItemInput): Promise<Item> {

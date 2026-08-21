@@ -173,9 +173,22 @@ export default async function pedidoRoutes(app: FastifyInstance) {
 
   // Listagem — protegido, painel da loja. Filtro opcional por status.
   app.get("/pedidos", { preHandler: exigirAuthLoja }, async (req, reply) => {
-    const { status } = req.query as { status?: string };
+    // de/ate no formato "YYYY-MM-DD" — filtro opcional, sem ele devolve tudo (comportamento
+    // de sempre). "ate" inclui o dia inteiro (até 23:59:59).
+    const { status, de, ate } = req.query as { status?: string; de?: string; ate?: string };
     const pedidos = await prisma.pedido.findMany({
-      where: { idLoja: req.loja!.idLoja, ...(status ? { status } : {}) },
+      where: {
+        idLoja: req.loja!.idLoja,
+        ...(status ? { status } : {}),
+        ...(de || ate
+          ? {
+              criadoEm: {
+                ...(de ? { gte: new Date(`${de}T00:00:00`) } : {}),
+                ...(ate ? { lte: new Date(`${ate}T23:59:59.999`) } : {}),
+              },
+            }
+          : {}),
+      },
       include: PEDIDO_INCLUDE,
       orderBy: { criadoEm: "desc" },
     });

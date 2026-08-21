@@ -24,13 +24,24 @@ function PedidosContent() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [aba, setAba] = useState<PedidoStatus>("recebido");
   const [carregando, setCarregando] = useState(true);
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
+
+  function carregarPedidos() {
+    if (!auth) return;
+    setCarregando(true);
+    listPedidos(auth.token, { de: dataDe || undefined, ate: dataAte || undefined })
+      .then(setPedidos)
+      .finally(() => setCarregando(false));
+  }
+
+  useEffect(() => {
+    carregarPedidos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth, dataDe, dataAte]);
 
   useEffect(() => {
     if (!auth) return;
-    listPedidos(auth.token)
-      .then(setPedidos)
-      .finally(() => setCarregando(false));
-
     const socket = conectarSocketLoja(auth.loja.id);
     socket.on("pedido:criado", (pedido: Pedido) => {
       setPedidos((prev) => [pedido, ...prev]);
@@ -61,6 +72,38 @@ function PedidosContent() {
 
   return (
     <main className="flex-1 p-4 max-w-3xl mx-auto w-full">
+      <div className="flex flex-wrap items-end gap-2 mb-4">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">De</label>
+          <input
+            type="date"
+            value={dataDe}
+            onChange={(e) => setDataDe(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Até</label>
+          <input
+            type="date"
+            value={dataAte}
+            onChange={(e) => setDataAte(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          />
+        </div>
+        {(dataDe || dataAte) && (
+          <button
+            onClick={() => {
+              setDataDe("");
+              setDataAte("");
+            }}
+            className="text-sm text-gray-500 hover:text-red-600 pb-1.5"
+          >
+            Limpar filtro
+          </button>
+        )}
+      </div>
+
       <div className="flex gap-2 overflow-x-auto mb-4">
         {ABAS.map((status) => (
           <button

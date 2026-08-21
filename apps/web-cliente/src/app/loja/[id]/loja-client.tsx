@@ -104,6 +104,7 @@ function BotaoFavoritar({ idLoja }: { idLoja: number }) {
 
 function Cardapio({ data }: { data: CardapioResponse }) {
   const fechada = data.loja.abertaAgora === false;
+  const destaques = data.categorias.flatMap((c) => c.itens).filter((i) => i.destaque && i.disponivel);
 
   return (
     <div className="max-w-2xl mx-auto pb-40">
@@ -140,6 +141,17 @@ function Cardapio({ data }: { data: CardapioResponse }) {
         <div className="mx-4 mb-4 border border-red-200 bg-red-50 text-red-700 text-sm rounded-lg p-3">
           Essa loja está fechada no momento. Você pode ver o cardápio, mas não é possível fazer pedidos agora.
         </div>
+      )}
+
+      {destaques.length > 0 && (
+        <section className="px-4 mb-8">
+          <h2 className="text-lg font-semibold text-green-700 mb-3">⭐ Destaques</h2>
+          <div className="space-y-3">
+            {destaques.map((item) => (
+              <ItemCard key={item.id} item={item} desabilitado={fechada} />
+            ))}
+          </div>
+        </section>
       )}
 
       <div className="px-4">

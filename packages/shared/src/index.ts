@@ -118,6 +118,7 @@ export interface Item {
   precoPromocional: number | null;
   imagemUrl: string | null;
   disponivel: boolean;
+  destaque: boolean;
   complementos: ItemComplemento[];
 }
 

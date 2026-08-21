@@ -187,6 +187,21 @@ function CardapioContent() {
     recarregar();
   }
 
+  const totalDestaques = categorias.reduce((s, c) => s + c.itens.filter((i) => i.destaque).length, 0);
+
+  async function handleToggleDestaque(idItem: number, destaque: boolean) {
+    if (!auth) return;
+    if (destaque && totalDestaques >= 3) return;
+    try {
+      await editarItem(auth.token, idItem, { destaque });
+      recarregar();
+    } catch {
+      // Corrida rara (dois toggles quase simultâneos batendo no limite) — só recarrega
+      // pra refletir o que realmente ficou salvo.
+      recarregar();
+    }
+  }
+
   async function handleExcluirItem(idItem: number) {
     if (!auth) return;
     await excluirItem(auth.token, idItem);
@@ -209,6 +224,13 @@ function CardapioContent() {
         </button>
       </form>
 
+      <p className="text-sm text-gray-500 mb-4">
+        Itens em destaque (aparecem numa seção especial pro cliente):{" "}
+        <span className={totalDestaques >= 3 ? "text-amber-700 font-medium" : "text-gray-700 font-medium"}>
+          {totalDestaques}/3
+        </span>
+      </p>
+
       {categorias.map((categoria) => (
         <section key={categoria.id} className="mb-6 border border-red-100 rounded-lg p-4">
           <div className="flex justify-between items-center mb-2">
@@ -230,6 +252,17 @@ function CardapioContent() {
                       className="accent-green-600"
                     />
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleDestaque(item.id, !item.destaque)}
+                    disabled={!item.destaque && totalDestaques >= 3}
+                    title={item.destaque ? "Remover destaque" : "Marcar como destaque"}
+                    className={`text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed ${
+                      item.destaque ? "text-amber-500" : "text-gray-300 hover:text-amber-400"
+                    }`}
+                  >
+                    ★
+                  </button>
                   {item.imagemUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={item.imagemUrl} alt={item.nome} className="w-8 h-8 rounded object-cover" />

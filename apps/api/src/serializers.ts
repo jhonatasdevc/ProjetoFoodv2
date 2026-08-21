@@ -225,6 +225,7 @@ export function serializeItem(item: {
   precoPromocional: Prisma.Decimal | number | null;
   imagemUrl: string | null;
   disponivel: boolean;
+  destaque: boolean;
   complementos?: Parameters<typeof serializeItemComplemento>[0][];
 }): Item {
   return {
@@ -236,6 +237,7 @@ export function serializeItem(item: {
     precoPromocional: item.precoPromocional === null ? null : num(item.precoPromocional),
     imagemUrl: item.imagemUrl,
     disponivel: item.disponivel,
+    destaque: item.destaque,
     complementos: (item.complementos ?? []).map(serializeItemComplemento),
   };
 }
