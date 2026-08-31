@@ -102,12 +102,20 @@ function FotoUploader({
       </div>
 
       <div className="space-y-3">
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={handleEscolherArquivo}
-          className="block text-sm"
-        />
+        <label
+          className={`inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 text-sm font-medium px-4 py-2 rounded cursor-pointer transition-colors ${
+            enviando ? "opacity-50 pointer-events-none" : "hover:bg-gray-200"
+          }`}
+        >
+          📷 Escolher foto
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleEscolherArquivo}
+            disabled={enviando}
+            className="hidden"
+          />
+        </label>
 
         {mensagem && <p className="text-sm text-green-700">{mensagem}</p>}
         {erro && <p className="text-sm text-red-600">{erro}</p>}

@@ -131,14 +131,24 @@ function ImagemInline({ idItem, imagemUrl, token, onSalvo }: { idItem: number; i
 
   return (
     <div className="flex items-center gap-2 mt-1 ml-6">
-      <span className="text-xs text-gray-500">Foto do produto:</span>
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        onChange={handleEscolherArquivo}
-        disabled={enviando}
-        className="text-xs"
-      />
+      {imagemUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imagemUrl} alt="" className="w-6 h-6 rounded object-cover shrink-0" />
+      )}
+      <label
+        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
+          enviando ? "opacity-50 pointer-events-none" : "border-green-600 text-green-700 hover:bg-green-50"
+        }`}
+      >
+        📷 {imagemUrl ? "Trocar foto" : "Adicionar foto"}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleEscolherArquivo}
+          disabled={enviando}
+          className="hidden"
+        />
+      </label>
       {imagemUrl && (
         <button onClick={handleRemover} disabled={enviando} className="text-xs text-gray-400 hover:text-red-600 disabled:opacity-50">
           remover
