@@ -6,6 +6,7 @@ import type { Endereco } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { criarEndereco, editarEndereco, excluirEndereco, listEnderecos, patchUsuarioMe } from "@/lib/api";
+import { buscarCep, formatarCep } from "@/lib/cep";
 
 const ENDERECO_VAZIO = { cep: "", cidade: "", estado: "", rua: "", numero: "", complemento: "", referencia: "" };
 
@@ -21,6 +22,29 @@ function PerfilContent() {
   const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [novoEndereco, setNovoEndereco] = useState(ENDERECO_VAZIO);
   const [erro, setErro] = useState<string | null>(null);
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep] = useState<string | null>(null);
+
+  async function handleCepChange(valor: string) {
+    const formatado = formatarCep(valor);
+    setNovoEndereco((prev) => ({ ...prev, cep: formatado }));
+    setErroCep(null);
+
+    if (formatado.replace(/\D/g, "").length !== 8) return;
+    setBuscandoCep(true);
+    try {
+      const resultado = await buscarCep(formatado);
+      if (!resultado) {
+        setErroCep("CEP não encontrado");
+        return;
+      }
+      setNovoEndereco((prev) => ({ ...prev, rua: resultado.rua, cidade: resultado.cidade, estado: resultado.estado }));
+    } catch {
+      setErroCep("Erro ao buscar CEP — preencha o endereço manualmente");
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
 
   function carregarEnderecos() {
     if (!auth) return;
@@ -117,30 +141,27 @@ function PerfilContent() {
 
         <form onSubmit={handleAdicionarEndereco} className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-700">Novo endereço</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              required
-              placeholder="CEP"
-              value={novoEndereco.cep}
-              onChange={(e) => setNovoEndereco({ ...novoEndereco, cep: e.target.value })}
-              className="border border-gray-300 rounded px-3 py-2"
-            />
-            <input
-              required
-              placeholder="Estado (UF)"
-              maxLength={2}
-              value={novoEndereco.estado}
-              onChange={(e) => setNovoEndereco({ ...novoEndereco, estado: e.target.value.toUpperCase() })}
-              className="border border-gray-300 rounded px-3 py-2"
-            />
+
+          <div>
+            <div className="relative">
+              <input
+                required
+                placeholder="CEP"
+                inputMode="numeric"
+                value={novoEndereco.cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+              {buscandoCep && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">Buscando...</span>
+              )}
+            </div>
+            {erroCep && <p className="text-xs text-red-600 mt-1">{erroCep}</p>}
+            {!erroCep && (
+              <p className="text-xs text-gray-400 mt-1">Digite o CEP pra preencher rua, cidade e estado automaticamente.</p>
+            )}
           </div>
-          <input
-            required
-            placeholder="Cidade"
-            value={novoEndereco.cidade}
-            onChange={(e) => setNovoEndereco({ ...novoEndereco, cidade: e.target.value })}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
+
           <div className="grid grid-cols-3 gap-3">
             <input
               required
@@ -157,6 +178,23 @@ function PerfilContent() {
               className="border border-gray-300 rounded px-3 py-2"
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              required
+              placeholder="Cidade"
+              value={novoEndereco.cidade}
+              onChange={(e) => setNovoEndereco({ ...novoEndereco, cidade: e.target.value })}
+              className="border border-gray-300 rounded px-3 py-2"
+            />
+            <input
+              required
+              placeholder="Estado (UF)"
+              maxLength={2}
+              value={novoEndereco.estado}
+              onChange={(e) => setNovoEndereco({ ...novoEndereco, estado: e.target.value.toUpperCase() })}
+              className="border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
           <input
             placeholder="Complemento (opcional)"
             value={novoEndereco.complemento}
@@ -164,7 +202,7 @@ function PerfilContent() {
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
           <input
-            placeholder="Referência (opcional)"
+            placeholder="Observação / referência (opcional) — ex: portão azul, perto do mercado"
             value={novoEndereco.referencia}
             onChange={(e) => setNovoEndereco({ ...novoEndereco, referencia: e.target.value })}
             className="w-full border border-gray-300 rounded px-3 py-2"
