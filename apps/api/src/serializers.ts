@@ -226,6 +226,7 @@ export function serializeItem(item: {
   imagemUrl: string | null;
   disponivel: boolean;
   destaque: boolean;
+  ordem: number;
   complementos?: Parameters<typeof serializeItemComplemento>[0][];
 }): Item {
   return {
@@ -238,6 +239,7 @@ export function serializeItem(item: {
     imagemUrl: item.imagemUrl,
     disponivel: item.disponivel,
     destaque: item.destaque,
+    ordem: item.ordem,
     complementos: (item.complementos ?? []).map(serializeItemComplemento),
   };
 }

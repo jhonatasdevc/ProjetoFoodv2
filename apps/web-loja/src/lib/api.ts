@@ -101,6 +101,7 @@ export interface NovoItemInput {
   imagemUrl?: string | null;
   disponivel?: boolean;
   destaque?: boolean;
+  ordem?: number;
 }
 
 export function criarItem(token: string, dados: NovoItemInput): Promise<Item> {

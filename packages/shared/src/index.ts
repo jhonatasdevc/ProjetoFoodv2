@@ -119,6 +119,7 @@ export interface Item {
   imagemUrl: string | null;
   disponivel: boolean;
   destaque: boolean;
+  ordem: number;
   complementos: ItemComplemento[];
 }
 

@@ -69,10 +69,12 @@ services:
       dockerfile: apps/web-loja/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.eazyclub.com.br}
+        NEXT_PUBLIC_WEB_CLIENTE_URL: ${NEXT_PUBLIC_WEB_CLIENTE_URL:-https://pedidos.eazyclub.com.br}
     container_name: delivery_web_loja
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+      NEXT_PUBLIC_WEB_CLIENTE_URL: ${NEXT_PUBLIC_WEB_CLIENTE_URL:-http://localhost:3002}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "3001:3001"           # painel da loja: http://localhost:3001 (local); no VPS o acesso público é via Traefik

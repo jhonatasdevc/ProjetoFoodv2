@@ -18,6 +18,7 @@ const itemSchema = z.object({
   imagemUrl: z.string().url().nullable().optional(),
   disponivel: z.boolean().optional(),
   destaque: z.boolean().optional(),
+  ordem: z.number().int().optional(),
 });
 
 const MAX_ITENS_DESTAQUE = 3;
@@ -47,7 +48,7 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     const categorias = await prisma.categoria.findMany({
       where: { idLoja },
       orderBy: { ordem: "asc" },
-      include: { itens: { include: { complementos: true }, orderBy: { id: "asc" } } },
+      include: { itens: { include: { complementos: true }, orderBy: { ordem: "asc" } } },
     });
 
     return {
@@ -104,8 +105,12 @@ export default async function cardapioRoutes(app: FastifyInstance) {
       return reply.code(400).send({ erro: `Máximo de ${MAX_ITENS_DESTAQUE} itens em destaque` });
     }
 
+    // Sem ordem explícita, entra no fim da categoria.
+    const ordem =
+      parsed.data.ordem ?? (await prisma.item.count({ where: { idCategoria: parsed.data.idCategoria } }));
+
     const item = await prisma.item.create({
-      data: parsed.data,
+      data: { ...parsed.data, ordem },
       include: { complementos: true },
     });
     return reply.code(201).send(serializeItem(item));

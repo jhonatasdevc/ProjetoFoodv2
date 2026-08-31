@@ -27,6 +27,9 @@ export function NavBar() {
           <Link href="/cardapio" className={pathname === "/cardapio" ? "text-green-700 font-medium" : "text-gray-600"}>
             Cardápio
           </Link>
+          <Link href="/vitrine" className={pathname === "/vitrine" ? "text-green-700 font-medium" : "text-gray-600"}>
+            Vitrine
+          </Link>
           <Link href="/stories" className={pathname === "/stories" ? "text-green-700 font-medium" : "text-gray-600"}>
             Stories
           </Link>
