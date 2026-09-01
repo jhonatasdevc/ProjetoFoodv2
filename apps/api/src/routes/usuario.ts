@@ -18,6 +18,7 @@ const verificarOtpSchema = z.object({
 const perfilSchema = z.object({
   nome: z.string().min(1).optional(),
   sobrenome: z.string().min(1).optional(),
+  email: z.string().email().nullable().optional(),
 });
 
 const favoritoSchema = z.object({ idLoja: z.number().int().positive() });

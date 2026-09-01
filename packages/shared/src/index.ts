@@ -255,6 +255,7 @@ export interface Usuario {
   nome: string;
   sobrenome: string;
   telefone: string;
+  email: string | null;
   enderecos: Endereco[];
   // Código ofuscado do id, usado no link de indicação (/loja/{arroba}?ref={codigo}).
   codigoIndicacao: string;
@@ -263,6 +264,7 @@ export interface Usuario {
 export interface AtualizarPerfilInput {
   nome?: string;
   sobrenome?: string;
+  email?: string | null;
 }
 
 export interface SolicitarOtpInput {

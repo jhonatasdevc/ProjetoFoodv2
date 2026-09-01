@@ -158,6 +158,7 @@ CREATE TABLE usuario (
   nome            VARCHAR(80) NOT NULL,
   sobrenome       VARCHAR(80) NOT NULL,
   telefone        VARCHAR(20) NOT NULL UNIQUE,
+  email           VARCHAR(160),
   criado_em       TIMESTAMP NOT NULL DEFAULT now()
 );
 

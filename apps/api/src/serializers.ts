@@ -204,6 +204,7 @@ export function serializeUsuario(usuario: {
   nome: string;
   sobrenome: string;
   telefone: string;
+  email: string | null;
   enderecos?: Parameters<typeof serializeEndereco>[0][];
 }): Usuario {
   return {
@@ -211,6 +212,7 @@ export function serializeUsuario(usuario: {
     nome: usuario.nome,
     sobrenome: usuario.sobrenome,
     telefone: usuario.telefone,
+    email: usuario.email,
     codigoIndicacao: codificarIdUsuario(usuario.id),
     enderecos: (usuario.enderecos ?? []).map(serializeEndereco),
   };
