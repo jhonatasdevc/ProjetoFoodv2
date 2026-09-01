@@ -60,7 +60,7 @@ function PerfilContent() {
   const { auth } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [aba, setAba] = useState<"dados" | "carteira">("dados");
+  const [aba, setAba] = useState<"dados" | "enderecos" | "carteira">("dados");
   const [nome, setNome] = useState(auth?.usuario.nome ?? "");
   const [sobrenome, setSobrenome] = useState(auth?.usuario.sobrenome ?? "");
   const [email, setEmail] = useState(auth?.usuario.email ?? "");
@@ -165,6 +165,14 @@ function PerfilContent() {
           Meus dados
         </button>
         <button
+          onClick={() => setAba("enderecos")}
+          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+            aba === "enderecos" ? "border-red-600 text-red-600" : "border-transparent text-gray-500"
+          }`}
+        >
+          Endereços
+        </button>
+        <button
           onClick={() => setAba("carteira")}
           className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
             aba === "carteira" ? "border-red-600 text-red-600" : "border-transparent text-gray-500"
@@ -177,7 +185,6 @@ function PerfilContent() {
       {aba === "carteira" && <CarteiraTab />}
 
       {aba === "dados" && (
-        <>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Meus dados</h2>
         <form onSubmit={handleSalvarPerfil} className="space-y-3">
@@ -218,7 +225,9 @@ function PerfilContent() {
           </button>
         </form>
       </section>
+      )}
 
+      {aba === "enderecos" && (
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Meus endereços</h2>
         <div className="space-y-2 mb-6">
@@ -325,7 +334,6 @@ function PerfilContent() {
           </button>
         </form>
       </section>
-        </>
       )}
     </main>
   );
