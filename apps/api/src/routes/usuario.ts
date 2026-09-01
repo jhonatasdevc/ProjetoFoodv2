@@ -163,7 +163,7 @@ export default async function usuarioRoutes(app: FastifyInstance) {
   app.get("/usuarios/me/favoritos", { preHandler: exigirAuthUsuario }, async (req) => {
     const favoritos = await prisma.favorito.findMany({
       where: { idUsuario: req.usuario!.idUsuario },
-      include: { loja: { select: { nome: true, imagemUrl: true } } },
+      include: { loja: { select: { arroba: true, nome: true, imagemUrl: true } } },
       orderBy: { criadoEm: "desc" },
     });
     return favoritos.map(serializeFavorito);
@@ -177,7 +177,7 @@ export default async function usuarioRoutes(app: FastifyInstance) {
       where: { idUsuario_idLoja: { idUsuario: req.usuario!.idUsuario, idLoja: parsed.data.idLoja } },
       create: { idUsuario: req.usuario!.idUsuario, idLoja: parsed.data.idLoja },
       update: {},
-      include: { loja: { select: { nome: true, imagemUrl: true } } },
+      include: { loja: { select: { arroba: true, nome: true, imagemUrl: true } } },
     });
     return reply.code(201).send(serializeFavorito(favorito));
   });

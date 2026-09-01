@@ -168,7 +168,7 @@ function CardapioContent() {
 
   async function recarregar() {
     if (!auth) return;
-    const cardapio = await getCardapio(auth.loja.id, auth.token);
+    const cardapio = await getCardapio(auth.loja.arroba, auth.token);
     setCategorias(cardapio.categorias);
   }
 

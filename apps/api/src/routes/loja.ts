@@ -10,7 +10,12 @@ const loginSchema = z.object({
   senha: z.string().min(1),
 });
 
+const arrobaSchema = z
+  .string()
+  .regex(/^[a-z0-9_]{3,30}$/, "Use só letras minúsculas, números e underscore (3 a 30 caracteres)");
+
 const atualizarLojaSchema = z.object({
+  arroba: arrobaSchema.optional(),
   imagemUrl: z.string().url().nullable().optional(),
   imagemPerfilUrl: z.string().url().nullable().optional(),
   aceitaEntrega: z.boolean().optional(),
@@ -21,11 +26,11 @@ const atualizarLojaSchema = z.object({
 });
 
 export default async function lojaRoutes(app: FastifyInstance) {
-  // GET público — usado pelo web-cliente pra montar a tela /loja/{id}
+  // GET público — usado pelo web-cliente pra montar a tela /loja/{arroba}
   app.get("/lojas/:id", async (req, reply) => {
-    const id = Number((req.params as { id: string }).id);
-    const loja = await prisma.loja.findUnique({
-      where: { id },
+    const arroba = (req.params as { id: string }).id;
+    const loja = await prisma.loja.findFirst({
+      where: { arroba },
       include: { horarios: true, fechamentos: true },
     });
     if (!loja || !loja.ativo) {
@@ -94,7 +99,10 @@ export default async function lojaRoutes(app: FastifyInstance) {
       }
     }
 
-    const loja = await prisma.loja.update({ where: { id: req.loja!.idLoja }, data: parsed.data });
+    const loja = await prisma.loja
+      .update({ where: { id: req.loja!.idLoja }, data: parsed.data })
+      .catch(() => null);
+    if (!loja) return reply.code(409).send({ erro: "Esse @ já está em uso por outra loja" });
     return serializeLoja(loja);
   });
 }

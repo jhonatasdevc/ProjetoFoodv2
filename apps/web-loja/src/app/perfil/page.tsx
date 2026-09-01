@@ -143,6 +143,64 @@ function FotoUploader({
   );
 }
 
+function ArrobaEditor({ arrobaAtual }: { arrobaAtual: string }) {
+  const { auth, atualizarLoja } = useAuth();
+  const [arroba, setArroba] = useState(arrobaAtual);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function handleSalvar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!auth || arroba === arrobaAtual) return;
+    setErro(null);
+    setMensagem(null);
+    setSalvando(true);
+    try {
+      const nova = await atualizarLojaMe(auth.token, { arroba });
+      atualizarLoja(nova);
+      setMensagem("@ atualizado.");
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Erro ao salvar @");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="font-semibold text-gray-900 mb-1">Link da loja</h2>
+      <p className="text-sm text-gray-500 mb-3">
+        Esse é o endereço que o cliente acessa: pedidos.eazyclub.com.br/loja/<strong>{arroba || "..."}</strong>
+      </p>
+      <form onSubmit={handleSalvar} className="flex gap-2 items-start">
+        <div className="flex items-center border border-gray-300 rounded px-3 focus-within:ring-1 focus-within:ring-red-400">
+          <span className="text-gray-400">@</span>
+          <input
+            required
+            minLength={3}
+            maxLength={30}
+            pattern="[a-z0-9_]+"
+            title="Só letras minúsculas, números e underscore"
+            value={arroba}
+            onChange={(e) => setArroba(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+            className="py-2 px-1 outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={salvando || arroba === arrobaAtual}
+          className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+        >
+          {salvando ? "Salvando..." : "Salvar"}
+        </button>
+      </form>
+      {mensagem && <p className="text-sm text-green-700 mt-2">{mensagem}</p>}
+      {erro && <p className="text-sm text-red-600 mt-2">{erro}</p>}
+    </section>
+  );
+}
+
 function PerfilContent() {
   const { auth, atualizarLoja } = useAuth();
   const loja = auth!.loja;
@@ -199,6 +257,8 @@ function PerfilContent() {
   return (
     <main className="flex-1 p-6 max-w-lg mx-auto w-full space-y-8">
       <h1 className="text-xl font-bold text-red-600 mb-2">Perfil da loja</h1>
+
+      <ArrobaEditor arrobaAtual={loja.arroba} />
 
       {loja.ativo ? (
         <div className="border border-green-200 bg-green-50 rounded-lg p-4 text-sm text-green-800">

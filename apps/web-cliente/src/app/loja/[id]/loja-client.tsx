@@ -15,6 +15,7 @@ function formatBRL(v: number) {
 
 function CartBar({
   idLoja,
+  arrobaLoja,
   aceitaEntrega,
   tipoFrete,
   valorFrete,
@@ -23,6 +24,7 @@ function CartBar({
   fechada,
 }: {
   idLoja: number;
+  arrobaLoja: string;
   aceitaEntrega: boolean;
   tipoFrete: TipoFrete;
   valorFrete: number | null;
@@ -64,6 +66,7 @@ function CartBar({
       {checkoutAberto && (
         <CheckoutForm
           idLoja={idLoja}
+          arrobaLoja={arrobaLoja}
           aceitaEntrega={aceitaEntrega}
           tipoFrete={tipoFrete}
           valorFrete={valorFrete}
@@ -76,7 +79,15 @@ function CartBar({
   );
 }
 
-function BotaoFavoritar({ idLoja, totalFavoritos }: { idLoja: number; totalFavoritos: number }) {
+function BotaoFavoritar({
+  idLoja,
+  arrobaLoja,
+  totalFavoritos,
+}: {
+  idLoja: number;
+  arrobaLoja: string;
+  totalFavoritos: number;
+}) {
   const router = useRouter();
   const { favoritado, alternar, carregando, logado } = useFavoritoLoja(idLoja);
   const [contador, setContador] = useState(totalFavoritos);
@@ -87,7 +98,7 @@ function BotaoFavoritar({ idLoja, totalFavoritos }: { idLoja: number; totalFavor
 
   async function handleClick() {
     if (!logado) {
-      router.push(`/login?redirect=/loja/${idLoja}`);
+      router.push(`/login?redirect=/loja/${arrobaLoja}`);
       return;
     }
     const eraFavoritado = favoritado;
@@ -104,8 +115,10 @@ function BotaoFavoritar({ idLoja, totalFavoritos }: { idLoja: number; totalFavor
         favoritado ? "bg-red-600 border-red-600 text-white" : "bg-white border-gray-300 text-gray-700 hover:border-red-400"
       }`}
     >
+      <span>
+        {contador} {contador === 1 ? "seguidor" : "seguidores"}
+      </span>
       <span aria-hidden>{favoritado ? "♥" : "♡"}</span>
-      <span>{contador}</span>
     </button>
   );
 }
@@ -142,7 +155,11 @@ function Cardapio({ data }: { data: CardapioResponse }) {
             {fechada ? "Fechada no momento" : "Aberta agora"}
           </p>
         </div>
-        <BotaoFavoritar idLoja={data.loja.id} totalFavoritos={data.loja.totalFavoritos ?? 0} />
+        <BotaoFavoritar
+          idLoja={data.loja.id}
+          arrobaLoja={data.loja.arroba}
+          totalFavoritos={data.loja.totalFavoritos ?? 0}
+        />
       </header>
 
       {fechada && (
@@ -177,6 +194,7 @@ function Cardapio({ data }: { data: CardapioResponse }) {
 
       <CartBar
         idLoja={data.loja.id}
+        arrobaLoja={data.loja.arroba}
         aceitaEntrega={data.loja.aceitaEntrega}
         tipoFrete={data.loja.tipoFrete}
         valorFrete={data.loja.valorFrete}

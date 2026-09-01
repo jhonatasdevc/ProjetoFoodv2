@@ -49,7 +49,9 @@ function RestaurantesContent() {
           >
             <div>
               <p className="font-semibold text-gray-900">{loja.nome}</p>
-              <p className="text-sm text-gray-600">{loja.email} · {nomeGrupo(loja.idGrupo)}</p>
+              <p className="text-sm text-gray-600">
+                @{loja.arroba} · {loja.email} · {nomeGrupo(loja.idGrupo)}
+              </p>
             </div>
             <span className={loja.ativo ? "text-green-700 text-sm" : "text-amber-600 text-sm"}>
               {loja.ativo ? "Desbloqueada" : "Bloqueada"}

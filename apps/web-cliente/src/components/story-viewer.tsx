@@ -40,13 +40,13 @@ export function StoryViewer({ grupo, onFechar }: { grupo: StoriesLoja; onFechar:
 
   function handleVerLoja(e: React.MouseEvent) {
     e.stopPropagation();
-    router.push(`/loja/${grupo.idLoja}`);
+    router.push(`/loja/${grupo.lojaArroba}`);
   }
 
   function handleFavoritar(e: React.MouseEvent) {
     e.stopPropagation();
     if (!logado) {
-      router.push(`/login?redirect=/loja/${grupo.idLoja}`);
+      router.push(`/login?redirect=/loja/${grupo.lojaArroba}`);
       return;
     }
     alternar();

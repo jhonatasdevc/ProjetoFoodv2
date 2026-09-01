@@ -30,6 +30,7 @@ export function serializeLoja(loja: {
   id: number;
   idGrupo: number;
   nome: string;
+  arroba: string;
   email: string;
   telefone: string | null;
   endereco: string | null;
@@ -46,6 +47,7 @@ export function serializeLoja(loja: {
     id: loja.id,
     idGrupo: loja.idGrupo,
     nome: loja.nome,
+    arroba: loja.arroba,
     email: loja.email,
     telefone: loja.telefone,
     endereco: loja.endereco,
@@ -152,10 +154,11 @@ export function serializeStory(story: { id: number; imagemUrl: string; criadoEm:
 export function serializeFavorito(f: {
   idLoja: number;
   criadoEm: Date;
-  loja: { nome: string; imagemUrl: string | null };
+  loja: { arroba: string; nome: string; imagemUrl: string | null };
 }): Favorito {
   return {
     idLoja: f.idLoja,
+    lojaArroba: f.loja.arroba,
     lojaNome: f.loja.nome,
     lojaImagemUrl: f.loja.imagemUrl,
     criadoEm: f.criadoEm.toISOString(),

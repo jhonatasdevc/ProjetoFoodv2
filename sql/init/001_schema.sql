@@ -38,6 +38,9 @@ CREATE TABLE loja (
   id                 SERIAL PRIMARY KEY,
   id_grupo           INTEGER NOT NULL REFERENCES grupo(id),
   nome               VARCHAR(120) NOT NULL,
+  -- Identificador público único usado na URL do cliente (/loja/{arroba}), sem o "@" —
+  -- só letras minúsculas, números e underscore, tipo handle de rede social.
+  arroba             VARCHAR(30) NOT NULL UNIQUE,
   email              VARCHAR(160) NOT NULL UNIQUE,
   senha_hash         VARCHAR(200) NOT NULL,
   telefone           VARCHAR(20),
@@ -54,7 +57,8 @@ CREATE TABLE loja (
   ativo              BOOLEAN NOT NULL DEFAULT false,
   criado_em          TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT loja_tipo_frete_check CHECK (tipo_frete IN ('gratis','pago')),
-  CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada)
+  CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada),
+  CONSTRAINT loja_arroba_formato_check CHECK (arroba ~ '^[a-z0-9_]{3,30}$')
 );
 
 -- Uma linha por dia da semana (0=domingo .. 6=sábado) por loja. "fechado=true" ignora

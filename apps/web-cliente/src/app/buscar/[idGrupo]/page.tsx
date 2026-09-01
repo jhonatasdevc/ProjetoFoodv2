@@ -26,7 +26,7 @@ function GrupoContent({ idGrupo }: { idGrupo: number }) {
       <h1 className="text-xl font-bold text-red-600 mb-4">{grupo.nome}</h1>
       <div className="space-y-2">
         {grupo.lojas.map((loja) => (
-          <Link key={loja.id} href={`/loja/${loja.id}`} className="block border border-red-100 rounded-lg p-4 hover:bg-red-50">
+          <Link key={loja.id} href={`/loja/${loja.arroba}`} className="block border border-red-100 rounded-lg p-4 hover:bg-red-50">
             <p className="font-semibold text-gray-900">{loja.nome}</p>
             {loja.endereco && <p className="text-sm text-gray-500">{loja.endereco}</p>}
           </Link>

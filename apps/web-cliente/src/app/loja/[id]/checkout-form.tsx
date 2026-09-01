@@ -78,6 +78,7 @@ function ItensCarrinho({
 
 export function CheckoutForm({
   idLoja,
+  arrobaLoja,
   aceitaEntrega,
   tipoFrete,
   valorFrete,
@@ -86,6 +87,7 @@ export function CheckoutForm({
   onClose,
 }: {
   idLoja: number;
+  arrobaLoja: string;
   aceitaEntrega: boolean;
   tipoFrete: TipoFrete;
   valorFrete: number | null;
@@ -110,7 +112,7 @@ export function CheckoutForm({
           <ItensCarrinho lines={lines} changeQuantity={changeQuantity} removeLine={removeLine} />
           <p className="text-sm text-gray-600">Você precisa estar cadastrado para finalizar o pedido.</p>
           <button
-            onClick={() => router.push(`/login?redirect=/loja/${idLoja}`)}
+            onClick={() => router.push(`/login?redirect=/loja/${arrobaLoja}`)}
             className="w-full bg-red-600 text-white font-semibold py-3 rounded hover:bg-red-700"
           >
             Fazer cadastro
@@ -123,6 +125,7 @@ export function CheckoutForm({
   return (
     <CheckoutLogado
       idLoja={idLoja}
+      arrobaLoja={arrobaLoja}
       aceitaEntrega={aceitaEntrega}
       tipoFrete={tipoFrete}
       valorFrete={valorFrete}
@@ -141,6 +144,7 @@ export function CheckoutForm({
 
 function CheckoutLogado({
   idLoja,
+  arrobaLoja,
   aceitaEntrega,
   tipoFrete,
   valorFrete,
@@ -155,6 +159,7 @@ function CheckoutLogado({
   removeLine,
 }: {
   idLoja: number;
+  arrobaLoja: string;
   aceitaEntrega: boolean;
   tipoFrete: TipoFrete;
   valorFrete: number | null;
@@ -297,7 +302,7 @@ function CheckoutLogado({
             {enderecos?.length === 0 && (
               <p className="text-sm text-gray-600">
                 Nenhum endereço salvo.{" "}
-                <Link href={`/perfil?redirect=/loja/${idLoja}`} className="text-red-600 underline">
+                <Link href={`/perfil?redirect=/loja/${arrobaLoja}`} className="text-red-600 underline">
                   Cadastrar endereço
                 </Link>
               </p>

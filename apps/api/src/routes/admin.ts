@@ -10,8 +10,13 @@ const loginSchema = z.object({
   senha: z.string().min(1),
 });
 
+const arrobaSchema = z
+  .string()
+  .regex(/^[a-z0-9_]{3,30}$/, "Use só letras minúsculas, números e underscore (3 a 30 caracteres)");
+
 const novaLojaSchema = z.object({
   nome: z.string().min(1),
+  arroba: arrobaSchema,
   email: z.string().email(),
   senha: z.string().min(6),
   telefone: z.string().optional(),
@@ -21,6 +26,7 @@ const novaLojaSchema = z.object({
 
 const editarLojaSchema = z.object({
   nome: z.string().min(1).optional(),
+  arroba: arrobaSchema.optional(),
   telefone: z.string().optional(),
   endereco: z.string().optional(),
   idGrupo: z.number().int().optional(),
@@ -65,7 +71,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     const senhaHash = await bcrypt.hash(senha, 10);
 
     const loja = await prisma.loja.create({ data: { ...dados, senhaHash } }).catch(() => null);
-    if (!loja) return reply.code(409).send({ erro: "Email já cadastrado" });
+    if (!loja) return reply.code(409).send({ erro: "Email ou @ já cadastrado" });
     return reply.code(201).send(serializeLoja(loja));
   });
 
@@ -77,9 +83,14 @@ export default async function adminRoutes(app: FastifyInstance) {
     const { senha, ...dados } = parsed.data;
     const senhaHash = senha ? await bcrypt.hash(senha, 10) : undefined;
 
+    let conflito = false;
     const loja = await prisma.loja
       .update({ where: { id }, data: { ...dados, ...(senhaHash ? { senhaHash } : {}) } })
-      .catch(() => null);
+      .catch((err) => {
+        if ((err as { code?: string }).code === "P2002") conflito = true;
+        return null;
+      });
+    if (conflito) return reply.code(409).send({ erro: "Esse @ já está em uso por outra loja" });
     if (!loja) return reply.code(404).send({ erro: "Loja não encontrada" });
     return serializeLoja(loja);
   });

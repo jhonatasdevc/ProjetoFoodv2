@@ -12,6 +12,7 @@ function NovaLojaContent() {
   const router = useRouter();
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [nome, setNome] = useState("");
+  const [arroba, setArroba] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -36,6 +37,7 @@ function NovaLojaContent() {
     try {
       await criarLojaAdmin(auth.token, {
         nome,
+        arroba,
         email,
         senha,
         telefone: telefone || undefined,
@@ -61,6 +63,23 @@ function NovaLojaContent() {
         <div>
           <label className="block text-sm text-gray-700 mb-1">Nome</label>
           <input required value={nome} onChange={(e) => setNome(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2" />
+        </div>
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">@ da loja (usado no link /loja/{"{@}"})</label>
+          <div className="flex items-center border border-gray-300 rounded px-3 focus-within:ring-1 focus-within:ring-red-400">
+            <span className="text-gray-400">@</span>
+            <input
+              required
+              minLength={3}
+              maxLength={30}
+              pattern="[a-z0-9_]+"
+              title="Só letras minúsculas, números e underscore"
+              value={arroba}
+              onChange={(e) => setArroba(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+              className="flex-1 py-2 px-1 outline-none"
+              placeholder="zepizza"
+            />
+          </div>
         </div>
         <div>
           <label className="block text-sm text-gray-700 mb-1">Email (login da loja)</label>

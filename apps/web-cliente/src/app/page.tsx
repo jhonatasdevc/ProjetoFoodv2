@@ -30,7 +30,7 @@ function RestaurantesRow({ lojas }: { lojas: Loja[] }) {
       <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Restaurantes</h2>
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
         {lojas.map((loja, i) => (
-          <Link key={loja.id} href={`/loja/${loja.id}`} className="shrink-0 w-36 snap-start">
+          <Link key={loja.id} href={`/loja/${loja.arroba}`} className="shrink-0 w-36 snap-start">
             <div
               className={`relative w-36 h-44 rounded-lg overflow-hidden bg-gradient-to-br ${CORES_CARD[i % CORES_CARD.length]}`}
             >
@@ -75,8 +75,9 @@ function UltimosPedidosRow({ pedidos, lojas }: { pedidos: Pedido[]; lojas: Loja[
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
         {ultimos.map((p) => {
           const loja = lojas.find((l) => l.id === p.idLoja);
+          if (!loja) return null;
           return (
-            <Link key={p.id} href={`/loja/${p.idLoja}`} className="shrink-0 w-32 snap-start">
+            <Link key={p.id} href={`/loja/${loja.arroba}`} className="shrink-0 w-32 snap-start">
               <div className="w-32 h-24 rounded-lg border border-gray-200 bg-white flex flex-col items-center justify-center gap-1.5 p-2">
                 <div className="w-11 h-11 rounded-full overflow-hidden bg-gray-100 shrink-0">
                   {loja?.imagemPerfilUrl && (
@@ -103,7 +104,7 @@ function FavoritosRow({ favoritos }: { favoritos: Favorito[] }) {
       <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Favoritos</h2>
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
         {favoritos.map((f, i) => (
-          <Link key={f.idLoja} href={`/loja/${f.idLoja}`} className="shrink-0 w-36 snap-start">
+          <Link key={f.idLoja} href={`/loja/${f.lojaArroba}`} className="shrink-0 w-36 snap-start">
             <div
               className={`relative w-36 h-44 rounded-lg overflow-hidden bg-gradient-to-br ${CORES_CARD[i % CORES_CARD.length]}`}
             >

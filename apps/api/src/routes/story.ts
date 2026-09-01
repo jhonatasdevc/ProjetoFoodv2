@@ -21,7 +21,7 @@ export default async function storyRoutes(app: FastifyInstance) {
   app.get("/stories", async () => {
     const stories = await prisma.story.findMany({
       where: { criadoEm: { gte: desde24h() } },
-      include: { loja: { select: { nome: true, imagemUrl: true } } },
+      include: { loja: { select: { arroba: true, nome: true, imagemUrl: true } } },
       orderBy: { criadoEm: "asc" },
     });
 
@@ -30,6 +30,7 @@ export default async function storyRoutes(app: FastifyInstance) {
       if (!porLoja.has(s.idLoja) && porLoja.size >= MAX_LOJAS_NA_HOME) continue;
       const grupo = porLoja.get(s.idLoja) ?? {
         idLoja: s.idLoja,
+        lojaArroba: s.loja.arroba,
         lojaNome: s.loja.nome,
         lojaImagemUrl: s.loja.imagemUrl,
         stories: [],

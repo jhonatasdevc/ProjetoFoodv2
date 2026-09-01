@@ -44,6 +44,7 @@ model Loja {
   id              Int         @id @default(autoincrement())
   idGrupo         Int         @map("id_grupo")
   nome            String      @db.VarChar(120)
+  arroba          String      @unique @db.VarChar(30)
   email           String      @unique @db.VarChar(160)
   senhaHash       String      @map("senha_hash") @db.VarChar(200)
   telefone        String?     @db.VarChar(20)

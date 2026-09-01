@@ -36,17 +36,18 @@ async function podeDestacar(idLoja: number, idItemAtual?: number) {
 }
 
 export default async function cardapioRoutes(app: FastifyInstance) {
-  // Cardápio completo (loja + categorias + itens + complementos) — usado pelo web-cliente
+  // Cardápio completo (loja + categorias + itens + complementos) — usado pelo web-cliente.
+  // ":id" aqui é o @ público da loja (arroba), não o id numérico do banco.
   app.get("/lojas/:id/cardapio", async (req, reply) => {
-    const idLoja = Number((req.params as { id: string }).id);
-    const loja = await prisma.loja.findUnique({
-      where: { id: idLoja },
+    const arroba = (req.params as { id: string }).id;
+    const loja = await prisma.loja.findFirst({
+      where: { arroba },
       include: { horarios: true, fechamentos: true, _count: { select: { favoritos: true } } },
     });
     if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
 
     const categorias = await prisma.categoria.findMany({
-      where: { idLoja },
+      where: { idLoja: loja.id },
       orderBy: { ordem: "asc" },
       include: { itens: { include: { complementos: true }, orderBy: { ordem: "asc" } } },
     });

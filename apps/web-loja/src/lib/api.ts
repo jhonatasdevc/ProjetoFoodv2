@@ -40,8 +40,8 @@ export function loginLoja(input: LoginLojaInput): Promise<LoginLojaResponse> {
   return request("/api/loja/login", null, { method: "POST", body: JSON.stringify(input) });
 }
 
-export function getCardapio(idLoja: number, token: string): Promise<CardapioResponse> {
-  return request(`/api/lojas/${idLoja}/cardapio`, token);
+export function getCardapio(arroba: string, token: string): Promise<CardapioResponse> {
+  return request(`/api/lojas/${arroba}/cardapio`, token);
 }
 
 export function atualizarLojaMe(token: string, dados: AtualizarLojaInput): Promise<Loja> {

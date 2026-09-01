@@ -49,6 +49,9 @@ CREATE TABLE loja (
   id                 SERIAL PRIMARY KEY,
   id_grupo           INTEGER NOT NULL REFERENCES grupo(id),
   nome               VARCHAR(120) NOT NULL,
+  -- Identificador público único usado na URL do cliente (/loja/{arroba}), sem o "@" —
+  -- só letras minúsculas, números e underscore, tipo handle de rede social.
+  arroba             VARCHAR(30) NOT NULL UNIQUE,
   email              VARCHAR(160) NOT NULL UNIQUE,
   senha_hash         VARCHAR(200) NOT NULL,
   telefone           VARCHAR(20),
@@ -65,7 +68,8 @@ CREATE TABLE loja (
   ativo              BOOLEAN NOT NULL DEFAULT false,
   criado_em          TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT loja_tipo_frete_check CHECK (tipo_frete IN ('gratis','pago')),
-  CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada)
+  CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada),
+  CONSTRAINT loja_arroba_formato_check CHECK (arroba ~ '^[a-z0-9_]{3,30}$')
 );
 
 -- Uma linha por dia da semana (0=domingo .. 6=sábado) por loja. "fechado=true" ignora
@@ -299,13 +303,13 @@ INSERT INTO admin (nome, email, senha_hash) VALUES
 
 -- Lojas de exemplo já nascem desbloqueadas (ativo=true) e com frete configurado — só as
 -- lojas cadastradas pelo admin de verdade nascem bloqueadas (default da coluna).
-INSERT INTO loja (id_grupo, nome, email, senha_hash, telefone, endereco, imagem_url, imagem_perfil_url, aceita_entrega, tipo_frete, valor_frete, aceita_retirada, ativo) VALUES
-  (1, 'Pizzaria do Zé', 'ze@pizzaria.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11999998888', 'Rua das Pizzas, 100', 'https://picsum.photos/seed/pizzaria-do-ze/480/600', 'https://picsum.photos/seed/pizzaria-do-ze-perfil/200/200', true, 'pago', 6.00, false, true),
-  (2, 'Burger House', 'contato@burgerhouse.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11988887777', 'Av. dos Hambúrgueres, 200', 'https://picsum.photos/seed/burger-house/480/600', 'https://picsum.photos/seed/burger-house-perfil/200/200', true, 'gratis', null, true, true),
-  (3, 'Sushi Kazu', 'contato@sushikazu.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11977776666', 'Rua Japão, 300', 'https://picsum.photos/seed/sushi-kazu/480/600', 'https://picsum.photos/seed/sushi-kazu-perfil/200/200', true, 'pago', 9.90, false, true),
-  (4, 'Doce Sonho', 'contato@docesonho.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11966665555', 'Rua das Sobremesas, 400', 'https://picsum.photos/seed/doce-sonho/480/600', 'https://picsum.photos/seed/doce-sonho-perfil/200/200', false, 'pago', null, true, true),
-  (5, 'Sabor Caseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600', 'https://picsum.photos/seed/sabor-caseiro-perfil/200/200', true, 'pago', 5.50, false, true),
-  (6, 'Verde Vida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600', 'https://picsum.photos/seed/verde-vida-perfil/200/200', true, 'gratis', null, false, true);
+INSERT INTO loja (id_grupo, nome, arroba, email, senha_hash, telefone, endereco, imagem_url, imagem_perfil_url, aceita_entrega, tipo_frete, valor_frete, aceita_retirada, ativo) VALUES
+  (1, 'Pizzaria do Zé', 'zepizza', 'ze@pizzaria.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11999998888', 'Rua das Pizzas, 100', 'https://picsum.photos/seed/pizzaria-do-ze/480/600', 'https://picsum.photos/seed/pizzaria-do-ze-perfil/200/200', true, 'pago', 6.00, false, true),
+  (2, 'Burger House', 'burgerhouse', 'contato@burgerhouse.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11988887777', 'Av. dos Hambúrgueres, 200', 'https://picsum.photos/seed/burger-house/480/600', 'https://picsum.photos/seed/burger-house-perfil/200/200', true, 'gratis', null, true, true),
+  (3, 'Sushi Kazu', 'sushikazu', 'contato@sushikazu.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11977776666', 'Rua Japão, 300', 'https://picsum.photos/seed/sushi-kazu/480/600', 'https://picsum.photos/seed/sushi-kazu-perfil/200/200', true, 'pago', 9.90, false, true),
+  (4, 'Doce Sonho', 'docesonho', 'contato@docesonho.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11966665555', 'Rua das Sobremesas, 400', 'https://picsum.photos/seed/doce-sonho/480/600', 'https://picsum.photos/seed/doce-sonho-perfil/200/200', false, 'pago', null, true, true),
+  (5, 'Sabor Caseiro', 'saborcaseiro', 'contato@saborcaseiro.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11955554444', 'Rua do Brasil, 500', 'https://picsum.photos/seed/sabor-caseiro/480/600', 'https://picsum.photos/seed/sabor-caseiro-perfil/200/200', true, 'pago', 5.50, false, true),
+  (6, 'Verde Vida', 'verdevida', 'contato@verdevida.com', '$2a$10$GgpB9F4/R4xG8h.Gwt1PCOPHAmry1h0tmOr/Ogfujt37wnHS5G/WC', '11944443333', 'Alameda Saudável, 600', 'https://picsum.photos/seed/verde-vida/480/600', 'https://picsum.photos/seed/verde-vida-perfil/200/200', true, 'gratis', null, false, true);
 
 -- Lojas de exemplo abertas todo santo dia, 24h — só pra não bloquear pedido nas demos
 -- dependendo da hora que alguém for testar. Loja de verdade configura isso em /horarios.

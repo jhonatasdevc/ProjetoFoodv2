@@ -38,6 +38,8 @@ export interface Loja {
   id: number;
   idGrupo: number;
   nome: string;
+  // Identificador público único, sem "@" (ex: "zepizza") — usado na URL /loja/{arroba}.
+  arroba: string;
   email: string;
   telefone: string | null;
   endereco: string | null;
@@ -86,6 +88,7 @@ export interface NovoFechamentoInput {
 }
 
 export interface AtualizarLojaInput {
+  arroba?: string;
   imagemUrl?: string | null;
   imagemPerfilUrl?: string | null;
   aceitaEntrega?: boolean;
@@ -292,6 +295,7 @@ export interface LoginAdminResponse {
 
 export interface NovaLojaAdminInput {
   nome: string;
+  arroba: string;
   email: string;
   senha: string;
   telefone?: string;
@@ -301,6 +305,7 @@ export interface NovaLojaAdminInput {
 
 export interface EditarLojaAdminInput {
   nome?: string;
+  arroba?: string;
   telefone?: string;
   endereco?: string;
   idGrupo?: number;
@@ -349,6 +354,7 @@ export interface Story {
 
 export interface StoriesLoja {
   idLoja: number;
+  lojaArroba: string;
   lojaNome: string;
   lojaImagemUrl: string | null;
   stories: Story[];
@@ -360,6 +366,7 @@ export interface NovoStoryInput {
 
 export interface Favorito {
   idLoja: number;
+  lojaArroba: string;
   lojaNome: string;
   lojaImagemUrl: string | null;
   criadoEm: string;

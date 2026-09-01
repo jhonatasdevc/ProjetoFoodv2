@@ -25,7 +25,7 @@ function VitrineContent() {
 
   function recarregar() {
     if (!auth) return;
-    getCardapio(auth.loja.id, auth.token).then((r) => setCategorias(r.categorias));
+    getCardapio(auth.loja.arroba, auth.token).then((r) => setCategorias(r.categorias));
   }
 
   useEffect(recarregar, [auth]);
@@ -96,7 +96,7 @@ function VitrineContent() {
           <div className="w-[375px] h-[720px] rounded-[2rem] border-8 border-gray-900 overflow-hidden bg-white shadow-lg">
             <iframe
               key={previewKey}
-              src={`${WEB_CLIENTE_URL}/loja/${auth.loja.id}`}
+              src={`${WEB_CLIENTE_URL}/loja/${auth.loja.arroba}`}
               className="w-full h-full border-0"
               title="Pré-visualização da loja"
             />
