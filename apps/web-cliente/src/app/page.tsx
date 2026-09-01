@@ -59,10 +59,19 @@ function RestaurantesRow({ lojas }: { lojas: Loja[] }) {
 // (imagem de fundo + gradiente + nome sobreposto), só que num formato mais compacto.
 function UltimosPedidosRow({ pedidos, lojas }: { pedidos: Pedido[]; lojas: Loja[] }) {
   if (pedidos.length === 0) return null;
-  const ultimos = pedidos.slice(0, 5);
+  // pedidos já vem do mais recente pro mais antigo — pega só o pedido mais recente de
+  // cada loja, senão pedir 5x na mesma loja mostra a mesma loja 5x nessa lista.
+  const lojasVistas = new Set<number>();
+  const ultimos: Pedido[] = [];
+  for (const p of pedidos) {
+    if (lojasVistas.has(p.idLoja)) continue;
+    lojasVistas.add(p.idLoja);
+    ultimos.push(p);
+    if (ultimos.length === 5) break;
+  }
   return (
     <section className="mb-8 -mx-4">
-      <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Últimos Pedidos</h2>
+      <h2 className="text-lg font-semibold text-green-700 mb-3 px-4">Últimas Lojas</h2>
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
         {ultimos.map((p) => {
           const loja = lojas.find((l) => l.id === p.idLoja);
