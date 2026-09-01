@@ -65,10 +65,10 @@ export function ChatPedido({ token, idPedido, onFechar }: { token: string; idPed
 
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50">
           {mensagens.map((m) => (
-            <div key={m.id} className={`flex ${m.remetente === "loja" ? "justify-end" : "justify-start"}`}>
+            <div key={m.id} className={`flex ${m.remetente === "cliente" ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm text-white ${
-                  m.remetente === "loja" ? "bg-green-600 rounded-br-sm" : "bg-gray-500 rounded-bl-sm"
+                  m.remetente === "cliente" ? "bg-green-600 rounded-br-sm" : "bg-gray-500 rounded-bl-sm"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.texto}</p>
