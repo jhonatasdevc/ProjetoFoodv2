@@ -67,6 +67,28 @@ export async function exigirAuthUsuario(req: FastifyRequest, reply: FastifyReply
   }
 }
 
+// Pro chat do pedido, que os dois lados (cliente e loja) acessam pela mesma rota — os
+// tokens usam o mesmo segredo, então decodifica uma vez e distingue pelo formato do
+// payload (idLoja vs idUsuario) em vez de assumir qual dos dois é.
+export async function exigirAuthLojaOuUsuario(req: FastifyRequest, reply: FastifyReply) {
+  const token = extrairToken(req);
+  if (!token) {
+    return reply.code(401).send({ erro: "Token não informado" });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as Record<string, unknown>;
+    if (typeof decoded.idLoja === "number") {
+      req.loja = decoded as unknown as LojaTokenPayload;
+    } else if (typeof decoded.idUsuario === "number") {
+      req.usuario = decoded as unknown as UsuarioTokenPayload;
+    } else {
+      return reply.code(401).send({ erro: "Token inválido" });
+    }
+  } catch {
+    return reply.code(401).send({ erro: "Token inválido ou expirado" });
+  }
+}
+
 export async function exigirAuthAdmin(req: FastifyRequest, reply: FastifyReply) {
   const token = extrairToken(req);
   if (!token) {

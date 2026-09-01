@@ -7,6 +7,7 @@ import type {
   Endereco,
   Favorito,
   Grupo,
+  MensagemPedido,
   NovaPushSubscriptionInput,
   Pedido,
   SolicitarOtpInput,
@@ -116,4 +117,12 @@ export function desfavoritarLoja(token: string, idLoja: number): Promise<void> {
 
 export function inscreverPush(token: string, input: NovaPushSubscriptionInput): Promise<{ inscrito: true }> {
   return request("/api/usuarios/me/push", token, { method: "POST", body: JSON.stringify(input) });
+}
+
+export function listMensagens(token: string, idPedido: number): Promise<MensagemPedido[]> {
+  return request(`/api/pedidos/${idPedido}/mensagens`, token);
+}
+
+export function enviarMensagem(token: string, idPedido: number, texto: string): Promise<MensagemPedido> {
+  return request(`/api/pedidos/${idPedido}/mensagens`, token, { method: "POST", body: JSON.stringify({ texto }) });
 }

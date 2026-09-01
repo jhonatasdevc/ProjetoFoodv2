@@ -11,10 +11,12 @@ import type {
   Item,
   ItemComplemento,
   Loja,
+  MensagemPedido,
   Pedido,
   PedidoItem,
   PedidoItemComplemento,
   PedidoStatus,
+  RemetenteMensagem,
   Story,
   TipoEntregaPedido,
   TipoFrete,
@@ -335,5 +337,21 @@ export function serializePedido(pedido: {
     criadoEm: pedido.criadoEm.toISOString(),
     atualizadoEm: pedido.atualizadoEm.toISOString(),
     itens: pedido.itens.map(serializePedidoItem),
+  };
+}
+
+export function serializeMensagem(m: {
+  id: number;
+  idPedido: number;
+  remetente: string;
+  texto: string;
+  criadoEm: Date;
+}): MensagemPedido {
+  return {
+    id: m.id,
+    idPedido: m.idPedido,
+    remetente: m.remetente as RemetenteMensagem,
+    texto: m.texto,
+    criadoEm: m.criadoEm.toISOString(),
   };
 }

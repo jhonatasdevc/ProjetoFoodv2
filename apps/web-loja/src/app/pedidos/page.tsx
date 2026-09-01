@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { labelStatusPedido, PEDIDO_STATUS_LABEL, type Pedido, type PedidoStatus } from "@delivery/shared";
+import {
+  labelStatusPedido,
+  PEDIDO_STATUS_LABEL,
+  STATUS_PEDIDO_EM_ANDAMENTO,
+  type Pedido,
+  type PedidoStatus,
+} from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { avancarStatusPedido, listPedidos } from "@/lib/api";
 import { conectarSocketLoja, tocarBeep } from "@/lib/socket";
+import { ChatPedido } from "./chat-pedido";
 
 const ABAS: PedidoStatus[] = ["recebido", "preparando", "saiu_entrega", "entregue", "cancelado"];
 
@@ -26,6 +33,7 @@ function PedidosContent() {
   const [carregando, setCarregando] = useState(true);
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
+  const [chatAberto, setChatAberto] = useState<number | null>(null);
 
   function carregarPedidos() {
     if (!auth) return;
@@ -153,25 +161,39 @@ function PedidosContent() {
 
               <p className="mt-2 text-xs text-gray-400">Pagamento: {pedido.formaPagamento}</p>
 
-              {PROXIMO_STATUS[pedido.status] && (
-                <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-2 items-center flex-wrap">
+                {PROXIMO_STATUS[pedido.status] && (
                   <button
                     onClick={() => handleAvancar(pedido)}
                     className="bg-green-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-green-700"
                   >
                     Avançar para {labelStatusPedido(PROXIMO_STATUS[pedido.status]!, pedido.tipoEntrega)}
                   </button>
+                )}
+                {STATUS_PEDIDO_EM_ANDAMENTO.includes(pedido.status) && (
+                  <button
+                    onClick={() => setChatAberto(pedido.id)}
+                    className="text-sm text-green-700 font-medium border border-green-600 rounded-full px-3 py-1.5 hover:bg-green-50"
+                  >
+                    💬 Chat
+                  </button>
+                )}
+                {PROXIMO_STATUS[pedido.status] && (
                   <button
                     onClick={() => handleCancelar(pedido)}
                     className="text-sm text-gray-500 hover:text-red-600"
                   >
                     Cancelar
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
+      )}
+
+      {chatAberto !== null && auth && (
+        <ChatPedido token={auth.token} idPedido={chatAberto} onFechar={() => setChatAberto(null)} />
       )}
     </main>
   );

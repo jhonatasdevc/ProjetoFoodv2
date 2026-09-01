@@ -250,6 +250,7 @@ model Pedido {
   cupom            Cupom?       @relation(fields: [idCupom], references: [id], onDelete: SetNull)
   itens            PedidoItem[]
   statusHistorico  PedidoStatusHistorico[]
+  mensagens        PedidoMensagem[]
 
   @@map("pedido")
 }
@@ -287,4 +288,15 @@ model PedidoStatusHistorico {
   pedido    Pedido   @relation(fields: [idPedido], references: [id], onDelete: Cascade)
 
   @@map("pedido_status_historico")
+}
+
+model PedidoMensagem {
+  id        Int      @id @default(autoincrement())
+  idPedido  Int      @map("id_pedido")
+  remetente String   @db.VarChar(10)
+  texto     String
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  pedido    Pedido   @relation(fields: [idPedido], references: [id], onDelete: Cascade)
+
+  @@map("pedido_mensagem")
 }

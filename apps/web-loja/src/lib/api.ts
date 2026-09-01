@@ -9,6 +9,7 @@ import type {
   Loja,
   LoginLojaInput,
   LoginLojaResponse,
+  MensagemPedido,
   NovoFechamentoInput,
   NovoStoryInput,
   Pedido,
@@ -146,4 +147,12 @@ export function criarFechamento(token: string, dados: NovoFechamentoInput): Prom
 
 export function excluirFechamento(token: string, id: number): Promise<void> {
   return request(`/api/loja/fechamentos/${id}`, token, { method: "DELETE" });
+}
+
+export function listMensagens(token: string, idPedido: number): Promise<MensagemPedido[]> {
+  return request(`/api/pedidos/${idPedido}/mensagens`, token);
+}
+
+export function enviarMensagem(token: string, idPedido: number, texto: string): Promise<MensagemPedido> {
+  return request(`/api/pedidos/${idPedido}/mensagens`, token, { method: "POST", body: JSON.stringify({ texto }) });
 }

@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { labelStatusPedido, PEDIDO_STATUS_ORDER, type Pedido } from "@delivery/shared";
+import {
+  labelStatusPedido,
+  PEDIDO_STATUS_ORDER,
+  STATUS_PEDIDO_EM_ANDAMENTO,
+  type Pedido,
+} from "@delivery/shared";
 import { getPedido } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ativarNotificacoes, ehIOS, estaInstalado, suportaPush } from "@/lib/push";
+import { useMinutosDecorridos } from "@/lib/use-minutos-decorridos";
+import { ChatPedido } from "@/components/chat-pedido";
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -62,9 +69,16 @@ function BotaoAtivarNotificacoes() {
   );
 }
 
+function ContadorMinutos({ criadoEm }: { criadoEm: string }) {
+  const minutos = useMinutosDecorridos(criadoEm);
+  return <span className="text-sm text-gray-400">⏱ {minutos} min</span>;
+}
+
 export function PedidoClient({ idPedido }: { idPedido: string }) {
+  const { auth } = useAuth();
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [chatAberto, setChatAberto] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -89,7 +103,10 @@ export function PedidoClient({ idPedido }: { idPedido: string }) {
 
   return (
     <div className="max-w-md mx-auto p-6">
-      <h1 className="text-xl font-bold text-gray-900">Pedido #{pedido.id}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">Pedido #{pedido.id}</h1>
+        {STATUS_PEDIDO_EM_ANDAMENTO.includes(pedido.status) && <ContadorMinutos criadoEm={pedido.criadoEm} />}
+      </div>
       <p className="text-sm text-gray-500 mt-1">{pedido.clienteNome} · {pedido.enderecoTexto}</p>
 
       {cancelado ? (
@@ -106,8 +123,20 @@ export function PedidoClient({ idPedido }: { idPedido: string }) {
               </li>
             ))}
           </ol>
+          {STATUS_PEDIDO_EM_ANDAMENTO.includes(pedido.status) && auth && (
+            <button
+              onClick={() => setChatAberto(true)}
+              className="mt-4 text-sm text-red-600 font-medium border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50"
+            >
+              💬 Chat com a loja
+            </button>
+          )}
           {pedido.status !== "entregue" && <BotaoAtivarNotificacoes />}
         </>
+      )}
+
+      {chatAberto && auth && (
+        <ChatPedido token={auth.token} idPedido={pedido.id} onFechar={() => setChatAberto(false)} />
       )}
 
       <div className="mt-8 border-t border-red-100 pt-4">

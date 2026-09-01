@@ -375,6 +375,24 @@ export interface NovaPushSubscriptionInput {
 // Índice = dia_semana no banco (0=domingo, igual ao Date.getDay() do JS).
 export const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 
+export type RemetenteMensagem = "cliente" | "loja";
+
+export interface MensagemPedido {
+  id: number;
+  idPedido: number;
+  remetente: RemetenteMensagem;
+  texto: string;
+  criadoEm: string;
+}
+
+export interface NovaMensagemInput {
+  texto: string;
+}
+
+// Status em que o pedido ainda está "em andamento" — chat e contador de tempo só fazem
+// sentido nesses (usado tanto no front quanto validado de novo no backend).
+export const STATUS_PEDIDO_EM_ANDAMENTO: PedidoStatus[] = ["recebido", "preparando", "saiu_entrega"];
+
 export const SOCKET_EVENTS = {
   PEDIDO_CRIADO: "pedido:criado",
   PEDIDO_ATUALIZADO: "pedido:atualizado",

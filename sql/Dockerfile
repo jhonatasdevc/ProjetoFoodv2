@@ -259,6 +259,18 @@ CREATE TABLE pedido_status_historico (
   criado_em     TIMESTAMP NOT NULL DEFAULT now()
 );
 
+-- Chat do pedido — só fica acessível pra enviar mensagem enquanto o pedido está em
+-- andamento (recebido/preparando/saiu_entrega), validado na API, não aqui.
+CREATE TABLE pedido_mensagem (
+  id            SERIAL PRIMARY KEY,
+  id_pedido     INTEGER NOT NULL REFERENCES pedido(id) ON DELETE CASCADE,
+  remetente     VARCHAR(10) NOT NULL,
+  texto         TEXT NOT NULL,
+  criado_em     TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT pedido_mensagem_remetente_check CHECK (remetente IN ('cliente','loja'))
+);
+
+CREATE INDEX idx_pedido_mensagem_pedido ON pedido_mensagem(id_pedido);
 CREATE INDEX idx_loja_grupo ON loja(id_grupo);
 CREATE INDEX idx_categoria_loja ON categoria(id_loja);
 CREATE INDEX idx_item_categoria ON item(id_categoria);
