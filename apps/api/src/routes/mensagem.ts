@@ -4,6 +4,7 @@ import { STATUS_PEDIDO_EM_ANDAMENTO, type PedidoStatus } from "@delivery/shared"
 import { prisma } from "../prisma.js";
 import { exigirAuthLojaOuUsuario } from "../auth.js";
 import { serializeMensagem } from "../serializers.js";
+import { emitirMensagemNova } from "../socket.js";
 
 const novaMensagemSchema = z.object({ texto: z.string().trim().min(1).max(1000) });
 
@@ -47,6 +48,10 @@ export default async function mensagemRoutes(app: FastifyInstance) {
     const mensagem = await prisma.pedidoMensagem.create({
       data: { idPedido, remetente, texto: parsed.data.texto },
     });
-    return reply.code(201).send(serializeMensagem(mensagem));
+    const serializada = serializeMensagem(mensagem);
+    if (remetente === "cliente") {
+      emitirMensagemNova(pedido.idLoja, serializada);
+    }
+    return reply.code(201).send(serializada);
   });
 }

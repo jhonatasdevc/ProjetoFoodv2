@@ -396,6 +396,7 @@ export const STATUS_PEDIDO_EM_ANDAMENTO: PedidoStatus[] = ["recebido", "preparan
 export const SOCKET_EVENTS = {
   PEDIDO_CRIADO: "pedido:criado",
   PEDIDO_ATUALIZADO: "pedido:atualizado",
+  MENSAGEM_NOVA: "mensagem:nova",
 } as const;
 
 

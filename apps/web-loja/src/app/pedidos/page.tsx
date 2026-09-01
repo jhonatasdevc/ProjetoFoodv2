@@ -5,6 +5,7 @@ import {
   labelStatusPedido,
   PEDIDO_STATUS_LABEL,
   STATUS_PEDIDO_EM_ANDAMENTO,
+  type MensagemPedido,
   type Pedido,
   type PedidoStatus,
 } from "@delivery/shared";
@@ -34,6 +35,7 @@ function PedidosContent() {
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
   const [chatAberto, setChatAberto] = useState<number | null>(null);
+  const [naoLidos, setNaoLidos] = useState<Set<number>>(new Set());
 
   function carregarPedidos() {
     if (!auth) return;
@@ -58,10 +60,24 @@ function PedidosContent() {
     socket.on("pedido:atualizado", (pedido: Pedido) => {
       setPedidos((prev) => prev.map((p) => (p.id === pedido.id ? pedido : p)));
     });
+    socket.on("mensagem:nova", (mensagem: MensagemPedido) => {
+      setNaoLidos((prev) => new Set(prev).add(mensagem.idPedido));
+      tocarBeep();
+    });
     return () => {
       socket.disconnect();
     };
   }, [auth]);
+
+  function abrirChat(idPedido: number) {
+    setChatAberto(idPedido);
+    setNaoLidos((prev) => {
+      if (!prev.has(idPedido)) return prev;
+      const proximo = new Set(prev);
+      proximo.delete(idPedido);
+      return proximo;
+    });
+  }
 
   const pedidosDaAba = useMemo(() => pedidos.filter((p) => p.status === aba), [pedidos, aba]);
 
@@ -172,10 +188,20 @@ function PedidosContent() {
                 )}
                 {STATUS_PEDIDO_EM_ANDAMENTO.includes(pedido.status) && (
                   <button
-                    onClick={() => setChatAberto(pedido.id)}
-                    className="text-sm text-green-700 font-medium border border-green-600 rounded-full px-3 py-1.5 hover:bg-green-50"
+                    onClick={() => abrirChat(pedido.id)}
+                    className={`relative text-sm font-medium rounded-full px-3 py-1.5 border ${
+                      naoLidos.has(pedido.id)
+                        ? "text-green-700 border-green-600 bg-green-50 animate-pulse"
+                        : "text-green-700 border-green-600 hover:bg-green-50"
+                    }`}
                   >
                     💬 Chat
+                    {naoLidos.has(pedido.id) && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600" />
+                      </span>
+                    )}
                   </button>
                 )}
                 {PROXIMO_STATUS[pedido.status] && (
