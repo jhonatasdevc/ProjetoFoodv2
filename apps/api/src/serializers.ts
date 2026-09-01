@@ -24,6 +24,7 @@ import type {
   Usuario,
 } from "@delivery/shared";
 import { lojaEstaAberta } from "./horario.js";
+import { codificarIdUsuario } from "./referral.js";
 
 const num = (v: Prisma.Decimal | number) => Number(v);
 
@@ -210,6 +211,7 @@ export function serializeUsuario(usuario: {
     nome: usuario.nome,
     sobrenome: usuario.sobrenome,
     telefone: usuario.telefone,
+    codigoIndicacao: codificarIdUsuario(usuario.id),
     enderecos: (usuario.enderecos ?? []).map(serializeEndereco),
   };
 }

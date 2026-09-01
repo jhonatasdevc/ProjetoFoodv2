@@ -9,13 +9,14 @@ import { enviarPushParaUsuario } from "../push.js";
 import { lojaEstaAberta } from "../horario.js";
 import { validarCupom } from "./cupom.js";
 import { saldoCashback } from "../cashback.js";
+import { decodificarIdUsuario } from "../referral.js";
 
 const criarPedidoSchema = z.object({
   idLoja: z.number().int(),
   tipoEntrega: z.enum(["entrega", "retirada"]),
   idEndereco: z.number().int().optional(),
   cupomCodigo: z.string().optional(),
-  codigoIndicacao: z.number().int().positive().optional(),
+  codigoIndicacao: z.string().optional(),
   usarCashback: z.boolean().optional(),
   formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito"]),
   observacoes: z.string().optional(),
@@ -135,12 +136,15 @@ export default async function pedidoRoutes(app: FastifyInstance) {
     let idUsuarioIndicador: number | undefined;
     let cashbackIndicacaoTipo: string | undefined;
     let cashbackIndicacaoValor: number | undefined;
-    if (input.codigoIndicacao && input.codigoIndicacao !== usuario.id && loja.cashbackAtivo && loja.cashbackTipo && loja.cashbackValor != null) {
-      const indicador = await prisma.usuario.findUnique({ where: { id: input.codigoIndicacao } });
-      if (indicador) {
-        idUsuarioIndicador = indicador.id;
-        cashbackIndicacaoTipo = loja.cashbackTipo;
-        cashbackIndicacaoValor = Number(loja.cashbackValor);
+    if (input.codigoIndicacao && loja.cashbackAtivo && loja.cashbackTipo && loja.cashbackValor != null) {
+      const idIndicador = decodificarIdUsuario(input.codigoIndicacao);
+      if (idIndicador && idIndicador !== usuario.id) {
+        const indicador = await prisma.usuario.findUnique({ where: { id: idIndicador } });
+        if (indicador) {
+          idUsuarioIndicador = indicador.id;
+          cashbackIndicacaoTipo = loja.cashbackTipo;
+          cashbackIndicacaoValor = Number(loja.cashbackValor);
+        }
       }
     }
 

@@ -166,9 +166,9 @@ export interface CriarPedidoInput {
   tipoEntrega: TipoEntregaPedido;
   idEndereco?: number;
   cupomCodigo?: string;
-  // Id do usuário que compartilhou o link da loja (?ref=) — só conta se for o primeiro
-  // pedido desse cliente nessa loja e ninguém tiver indicado a si mesmo.
-  codigoIndicacao?: number;
+  // Código de indicação de quem compartilhou o link da loja (?ref=) — só conta se for o
+  // primeiro pedido desse cliente nessa loja e ninguém tiver indicado a si mesmo.
+  codigoIndicacao?: string;
   // Usa o saldo de cashback que o cliente já tem nessa loja como desconto neste pedido.
   usarCashback?: boolean;
   formaPagamento: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito";
@@ -256,6 +256,8 @@ export interface Usuario {
   sobrenome: string;
   telefone: string;
   enderecos: Endereco[];
+  // Código ofuscado do id, usado no link de indicação (/loja/{arroba}?ref={codigo}).
+  codigoIndicacao: string;
 }
 
 export interface AtualizarPerfilInput {

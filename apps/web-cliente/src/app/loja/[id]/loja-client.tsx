@@ -81,31 +81,16 @@ function CartBar({
   );
 }
 
-function BotaoFavoritar({
-  idLoja,
-  arrobaLoja,
-  totalFavoritos,
-}: {
-  idLoja: number;
-  arrobaLoja: string;
-  totalFavoritos: number;
-}) {
+function BotaoFavoritar({ idLoja, arrobaLoja }: { idLoja: number; arrobaLoja: string }) {
   const router = useRouter();
   const { favoritado, alternar, carregando, logado } = useFavoritoLoja(idLoja);
-  const [contador, setContador] = useState(totalFavoritos);
 
-  useEffect(() => {
-    setContador(totalFavoritos);
-  }, [totalFavoritos]);
-
-  async function handleClick() {
+  function handleClick() {
     if (!logado) {
       router.push(`/login?redirect=/loja/${arrobaLoja}`);
       return;
     }
-    const eraFavoritado = favoritado;
-    await alternar();
-    setContador((c) => c + (eraFavoritado ? -1 : 1));
+    alternar();
   }
 
   return (
@@ -113,26 +98,35 @@ function BotaoFavoritar({
       onClick={handleClick}
       disabled={carregando}
       aria-label={favoritado ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-      className={`shrink-0 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border disabled:opacity-50 ${
+      className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border disabled:opacity-50 ${
         favoritado ? "bg-red-600 border-red-600 text-white" : "bg-white border-gray-300 text-gray-700 hover:border-red-400"
       }`}
     >
-      <span>
-        {contador} {contador === 1 ? "seguidor" : "seguidores"}
+      <span aria-hidden className="text-lg leading-none">
+        {favoritado ? "♥" : "♡"}
       </span>
-      <span aria-hidden>{favoritado ? "♥" : "♡"}</span>
     </button>
+  );
+}
+
+// Ícone "square.and.arrow.up" — o mesmo glifo usado no botão de compartilhar da Apple.
+function IconeCompartilharApple() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+      <path d="M12 15V3" />
+      <path d="M7 8l5-5 5 5" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
   );
 }
 
 function BotaoCompartilhar({ arrobaLoja, lojaNome }: { arrobaLoja: string; lojaNome: string }) {
   const { auth } = useAuth();
-  const [copiado, setCopiado] = useState(false);
 
   if (!auth) return null;
 
   async function handleClick() {
-    const url = `${window.location.origin}/loja/${arrobaLoja}?ref=${auth!.usuario.id}`;
+    const url = `${window.location.origin}/loja/${arrobaLoja}?ref=${auth!.usuario.codigoIndicacao}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: lojaNome, text: `Dá uma olhada em ${lojaNome}!`, url });
@@ -143,8 +137,6 @@ function BotaoCompartilhar({ arrobaLoja, lojaNome }: { arrobaLoja: string; lojaN
     }
     try {
       await navigator.clipboard.writeText(url);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
     } catch {
       // clipboard indisponível — sem fallback, botão só não faz nada
     }
@@ -153,9 +145,10 @@ function BotaoCompartilhar({ arrobaLoja, lojaNome }: { arrobaLoja: string; lojaN
   return (
     <button
       onClick={handleClick}
-      className="shrink-0 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:border-red-400"
+      aria-label="Compartilhar"
+      className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full border border-gray-300 text-gray-700 hover:border-red-400"
     >
-      {copiado ? "Link copiado!" : "↗ Compartilhar"}
+      <IconeCompartilharApple />
     </button>
   );
 }
@@ -192,12 +185,8 @@ function Cardapio({ data }: { data: CardapioResponse }) {
             {fechada ? "Fechada no momento" : "Aberta agora"}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          <BotaoFavoritar
-            idLoja={data.loja.id}
-            arrobaLoja={data.loja.arroba}
-            totalFavoritos={data.loja.totalFavoritos ?? 0}
-          />
+        <div className="flex items-center gap-2 shrink-0">
+          <BotaoFavoritar idLoja={data.loja.id} arrobaLoja={data.loja.arroba} />
           <BotaoCompartilhar arrobaLoja={data.loja.arroba} lojaNome={data.loja.nome} />
         </div>
       </header>
@@ -258,12 +247,12 @@ export function LojaClient({ idLoja }: { idLoja: string }) {
       .catch((err) => setErro(err instanceof Error ? err.message : "Erro ao carregar loja"));
   }, [idLoja]);
 
-  // Guarda quem indicou essa loja (link /loja/{arroba}?ref={idUsuario}) pra mandar junto
+  // Guarda quem indicou essa loja (link /loja/{arroba}?ref={codigo}) pra mandar junto
   // no pedido, no checkout — não conta se a pessoa indicou a si mesma.
   useEffect(() => {
     if (!data) return;
-    const ref = Number(searchParams.get("ref"));
-    if (ref && ref !== auth?.usuario.id) salvarIndicacao(data.loja.id, ref);
+    const ref = searchParams.get("ref");
+    if (ref && ref !== auth?.usuario.codigoIndicacao) salvarIndicacao(data.loja.id, ref);
   }, [data, searchParams, auth]);
 
   if (erro) {
