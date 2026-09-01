@@ -22,6 +22,7 @@ interface PushPayload {
   titulo: string;
   corpo: string;
   url: string;
+  idPedido?: number;
 }
 
 // Manda pra todas as inscrições do usuário (pode ter mais de um navegador/dispositivo).
@@ -46,7 +47,12 @@ export async function enviarPushParaUsuario(idUsuario: number, payload: PushPayl
             endpoint: inscricao.endpoint,
             keys: { p256dh: inscricao.chaveP256dh, auth: inscricao.chaveAuth },
           },
-          JSON.stringify({ title: payload.titulo, body: payload.corpo, url: payload.url }),
+          JSON.stringify({
+            title: payload.titulo,
+            body: payload.corpo,
+            url: payload.url,
+            idPedido: payload.idPedido,
+          }),
         );
         console.log(`Push enviado com sucesso pra inscrição ${inscricao.id} (usuário ${idUsuario}).`);
       } catch (err) {

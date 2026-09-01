@@ -5,6 +5,7 @@ import { prisma } from "../prisma.js";
 import { exigirAuthLojaOuUsuario } from "../auth.js";
 import { serializeMensagem } from "../serializers.js";
 import { emitirMensagemNova } from "../socket.js";
+import { enviarPushParaUsuario } from "../push.js";
 
 const novaMensagemSchema = z.object({ texto: z.string().trim().min(1).max(1000) });
 
@@ -51,6 +52,14 @@ export default async function mensagemRoutes(app: FastifyInstance) {
     const serializada = serializeMensagem(mensagem);
     if (remetente === "cliente") {
       emitirMensagemNova(pedido.idLoja, serializada);
+    } else {
+      const texto = parsed.data.texto;
+      enviarPushParaUsuario(pedido.idUsuario, {
+        titulo: "💬 A loja respondeu",
+        corpo: texto.length > 100 ? `${texto.slice(0, 100)}…` : texto,
+        url: `/pedido/${pedido.id}`,
+        idPedido: pedido.id,
+      }).catch(() => {});
     }
     return reply.code(201).send(serializada);
   });

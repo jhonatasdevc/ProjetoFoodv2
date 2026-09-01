@@ -1,6 +1,18 @@
+// Pedidos cujo chat está aberto e visível em alguma aba agora — evita notificar
+// o cliente sobre uma mensagem que ele já está vendo na tela.
+const chatsAbertos = new Set();
+
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || typeof data !== "object" || !data.idPedido) return;
+  if (data.type === "chat-aberto") chatsAbertos.add(data.idPedido);
+  else if (data.type === "chat-fechado") chatsAbertos.delete(data.idPedido);
+});
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
   const payload = event.data.json();
+  if (payload.idPedido && chatsAbertos.has(payload.idPedido)) return;
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,

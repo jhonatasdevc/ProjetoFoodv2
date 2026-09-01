@@ -26,6 +26,16 @@ export function ChatPedido({ token, idPedido, onFechar }: { token: string; idPed
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idPedido]);
 
+  // Avisa o service worker que esse pedido está com o chat aberto na tela, pra ele não
+  // disparar push notification de mensagem nova enquanto o cliente já está vendo.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.controller?.postMessage({ type: "chat-aberto", idPedido });
+    return () => {
+      navigator.serviceWorker.controller?.postMessage({ type: "chat-fechado", idPedido });
+    };
+  }, [idPedido]);
+
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens.length]);
