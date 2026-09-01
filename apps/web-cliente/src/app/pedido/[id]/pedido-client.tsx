@@ -24,9 +24,17 @@ function BotaoAtivarNotificacoes() {
   const [precisaInstalar, setPrecisaInstalar] = useState(false);
 
   useEffect(() => {
-    if (suportaPush() && Notification.permission === "granted") setEstado("ativado");
-    else if (!suportaPush() && ehIOS() && !estaInstalado()) setPrecisaInstalar(true);
-  }, []);
+    if (!auth) return;
+    if (suportaPush() && Notification.permission === "granted") {
+      // A permissão do navegador é permanente, mas a inscrição salva no servidor pode ter
+      // sumido (ex: reset de banco) — resincroniza em vez de só confiar na permissão local.
+      ativarNotificacoes(auth.token)
+        .then(() => setEstado("ativado"))
+        .catch(() => setEstado("idle"));
+    } else if (!suportaPush() && ehIOS() && !estaInstalado()) {
+      setPrecisaInstalar(true);
+    }
+  }, [auth]);
 
   if (!auth || estado === "ativado") return null;
 
