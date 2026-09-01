@@ -1,6 +1,7 @@
 import type {
   AtualizarPerfilInput,
   CardapioResponse,
+  CarteiraResponse,
   CriarEnderecoInput,
   CriarPedidoInput,
   Cupom,
@@ -125,4 +126,8 @@ export function listMensagens(token: string, idPedido: number): Promise<Mensagem
 
 export function enviarMensagem(token: string, idPedido: number, texto: string): Promise<MensagemPedido> {
   return request(`/api/pedidos/${idPedido}/mensagens`, token, { method: "POST", body: JSON.stringify({ texto }) });
+}
+
+export function getCarteira(token: string): Promise<CarteiraResponse> {
+  return request("/api/usuarios/me/carteira", token);
 }

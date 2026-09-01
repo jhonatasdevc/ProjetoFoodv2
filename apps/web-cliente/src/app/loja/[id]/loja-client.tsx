@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { CardapioResponse, TipoFrete } from "@delivery/shared";
 import { getCardapio } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { CartProvider, useCart } from "@/lib/cart-context";
 import { useFavoritoLoja } from "@/lib/use-favorito";
+import { salvarIndicacao } from "@/lib/indicacao";
 import { ItemCard } from "./item-card";
 import { CheckoutForm } from "./checkout-form";
 
@@ -123,6 +125,41 @@ function BotaoFavoritar({
   );
 }
 
+function BotaoCompartilhar({ arrobaLoja, lojaNome }: { arrobaLoja: string; lojaNome: string }) {
+  const { auth } = useAuth();
+  const [copiado, setCopiado] = useState(false);
+
+  if (!auth) return null;
+
+  async function handleClick() {
+    const url = `${window.location.origin}/loja/${arrobaLoja}?ref=${auth!.usuario.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: lojaNome, text: `Dá uma olhada em ${lojaNome}!`, url });
+      } catch {
+        // cliente cancelou o compartilhamento — sem erro pra mostrar
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // clipboard indisponível — sem fallback, botão só não faz nada
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className="shrink-0 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:border-red-400"
+    >
+      {copiado ? "Link copiado!" : "↗ Compartilhar"}
+    </button>
+  );
+}
+
 function Cardapio({ data }: { data: CardapioResponse }) {
   const fechada = data.loja.abertaAgora === false;
   const destaques = data.categorias.flatMap((c) => c.itens).filter((i) => i.destaque && i.disponivel);
@@ -155,11 +192,14 @@ function Cardapio({ data }: { data: CardapioResponse }) {
             {fechada ? "Fechada no momento" : "Aberta agora"}
           </p>
         </div>
-        <BotaoFavoritar
-          idLoja={data.loja.id}
-          arrobaLoja={data.loja.arroba}
-          totalFavoritos={data.loja.totalFavoritos ?? 0}
-        />
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <BotaoFavoritar
+            idLoja={data.loja.id}
+            arrobaLoja={data.loja.arroba}
+            totalFavoritos={data.loja.totalFavoritos ?? 0}
+          />
+          <BotaoCompartilhar arrobaLoja={data.loja.arroba} lojaNome={data.loja.nome} />
+        </div>
       </header>
 
       {fechada && (
@@ -207,6 +247,8 @@ function Cardapio({ data }: { data: CardapioResponse }) {
 }
 
 export function LojaClient({ idLoja }: { idLoja: string }) {
+  const { auth } = useAuth();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<CardapioResponse | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -215,6 +257,14 @@ export function LojaClient({ idLoja }: { idLoja: string }) {
       .then(setData)
       .catch((err) => setErro(err instanceof Error ? err.message : "Erro ao carregar loja"));
   }, [idLoja]);
+
+  // Guarda quem indicou essa loja (link /loja/{arroba}?ref={idUsuario}) pra mandar junto
+  // no pedido, no checkout — não conta se a pessoa indicou a si mesma.
+  useEffect(() => {
+    if (!data) return;
+    const ref = Number(searchParams.get("ref"));
+    if (ref && ref !== auth?.usuario.id) salvarIndicacao(data.loja.id, ref);
+  }, [data, searchParams, auth]);
 
   if (erro) {
     return <p className="p-6 text-center text-red-600">{erro}</p>;

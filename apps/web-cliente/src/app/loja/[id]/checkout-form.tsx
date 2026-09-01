@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CriarPedidoInput, Endereco, TipoEntregaPedido, TipoFrete } from "@delivery/shared";
-import { criarPedido, listEnderecos, validarCupom } from "@/lib/api";
+import { criarPedido, getCarteira, listEnderecos, validarCupom } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useCart, type CartLine } from "@/lib/cart-context";
+import { lerIndicacao, limparIndicacao } from "@/lib/indicacao";
 
 const FORMAS_PAGAMENTO: { value: CriarPedidoInput["formaPagamento"]; label: string }[] = [
   { value: "pix", label: "Pix" },
@@ -188,6 +189,8 @@ function CheckoutLogado({
   const [observacoes, setObservacoes] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [saldoCashback, setSaldoCashback] = useState(0);
+  const [usarCashback, setUsarCashback] = useState(false);
 
   useEffect(() => {
     if (retirada) return;
@@ -196,6 +199,13 @@ function CheckoutLogado({
       setIdEndereco(resp.find((e) => e.padrao)?.id ?? resp[0]?.id ?? null);
     });
   }, [token, retirada]);
+
+  useEffect(() => {
+    getCarteira(token).then((carteira) => {
+      const saldo = carteira.porLoja.find((p) => p.idLoja === idLoja)?.saldo ?? 0;
+      setSaldoCashback(saldo);
+    });
+  }, [token, idLoja]);
 
   async function handleAplicarCupom() {
     if (!cupomInput.trim()) return;
@@ -218,7 +228,9 @@ function CheckoutLogado({
   }
 
   const valorFreteCobrado = !retirada && tipoFrete === "pago" ? (valorFrete ?? 0) : 0;
-  const totalComDesconto = total - (cupomAplicado?.valorDesconto ?? 0) + valorFreteCobrado;
+  const totalAntesCashback = total - (cupomAplicado?.valorDesconto ?? 0) + valorFreteCobrado;
+  const valorCashbackAplicado = usarCashback ? Math.min(saldoCashback, totalAntesCashback) : 0;
+  const totalComDesconto = totalAntesCashback - valorCashbackAplicado;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -231,6 +243,8 @@ function CheckoutLogado({
         tipoEntrega: modoEntrega,
         idEndereco: retirada ? undefined : (idEndereco ?? undefined),
         cupomCodigo: cupomAplicado?.codigo,
+        codigoIndicacao: lerIndicacao(idLoja) ?? undefined,
+        usarCashback: usarCashback || undefined,
         formaPagamento,
         observacoes: observacoes || undefined,
         itens: lines.map((l) => ({
@@ -240,6 +254,7 @@ function CheckoutLogado({
           complementos: l.complementos.map((c) => ({ idItemComplemento: c.idItemComplemento })),
         })),
       });
+      limparIndicacao(idLoja);
       clear();
       router.push(`/pedido/${pedido.id}`);
     } catch (err) {
@@ -353,6 +368,21 @@ function CheckoutLogado({
           {cupomErro && <p className="text-sm text-red-600 mt-1">{cupomErro}</p>}
         </div>
 
+        {saldoCashback > 0 && (
+          <label className="flex items-start gap-2 text-sm text-gray-700 border border-green-200 bg-green-50 rounded-lg px-3 py-2">
+            <input
+              type="checkbox"
+              checked={usarCashback}
+              onChange={(e) => setUsarCashback(e.target.checked)}
+              className="mt-0.5 accent-green-600"
+            />
+            <span>
+              Você tem <strong>{formatBRL(saldoCashback)}</strong> de cashback nessa loja — usar como desconto nesse
+              pedido?
+            </span>
+          </label>
+        )}
+
         <div>
           <label className="block text-sm text-gray-700 mb-1">Forma de pagamento</label>
           <select
@@ -391,6 +421,12 @@ function CheckoutLogado({
             <div className="flex justify-between text-green-700">
               <span>Desconto</span>
               <span>-{formatBRL(cupomAplicado.valorDesconto)}</span>
+            </div>
+          )}
+          {valorCashbackAplicado > 0 && (
+            <div className="flex justify-between text-green-700">
+              <span>Cashback</span>
+              <span>-{formatBRL(valorCashbackAplicado)}</span>
             </div>
           )}
           <div className="flex justify-between font-semibold text-gray-900 pt-1">

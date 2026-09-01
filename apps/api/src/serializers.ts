@@ -18,6 +18,7 @@ import type {
   PedidoStatus,
   RemetenteMensagem,
   Story,
+  TipoCashback,
   TipoEntregaPedido,
   TipoFrete,
   Usuario,
@@ -40,6 +41,9 @@ export function serializeLoja(loja: {
   tipoFrete: string;
   valorFrete: Prisma.Decimal | number | null;
   aceitaRetirada: boolean;
+  cashbackAtivo: boolean;
+  cashbackTipo: string | null;
+  cashbackValor: Prisma.Decimal | number | null;
   ativo: boolean;
   totalFavoritos?: number;
 }): Loja {
@@ -57,6 +61,9 @@ export function serializeLoja(loja: {
     tipoFrete: loja.tipoFrete as TipoFrete,
     valorFrete: loja.valorFrete != null ? num(loja.valorFrete) : null,
     aceitaRetirada: loja.aceitaRetirada,
+    cashbackAtivo: loja.cashbackAtivo,
+    cashbackTipo: loja.cashbackTipo as TipoCashback | null,
+    cashbackValor: loja.cashbackValor != null ? num(loja.cashbackValor) : null,
     ativo: loja.ativo,
     ...(loja.totalFavoritos !== undefined ? { totalFavoritos: loja.totalFavoritos } : {}),
   };
@@ -316,6 +323,7 @@ export function serializePedido(pedido: {
   total: Prisma.Decimal | number;
   valorDesconto: Prisma.Decimal | number;
   valorFrete: Prisma.Decimal | number;
+  valorCashbackUsado: Prisma.Decimal | number;
   tipoEntrega: string;
   observacoes: string | null;
   criadoEm: Date;
@@ -337,6 +345,7 @@ export function serializePedido(pedido: {
     total: num(pedido.total),
     valorDesconto: num(pedido.valorDesconto),
     valorFrete: num(pedido.valorFrete),
+    valorCashbackUsado: num(pedido.valorCashbackUsado),
     tipoEntrega: pedido.tipoEntrega as TipoEntregaPedido,
     observacoes: pedido.observacoes,
     criadoEm: pedido.criadoEm.toISOString(),

@@ -22,6 +22,9 @@ const atualizarLojaSchema = z.object({
   tipoFrete: z.enum(["gratis", "pago"]).optional(),
   valorFrete: z.number().positive().nullable().optional(),
   aceitaRetirada: z.boolean().optional(),
+  cashbackAtivo: z.boolean().optional(),
+  cashbackTipo: z.enum(["percentual", "valor_fixo"]).optional(),
+  cashbackValor: z.number().positive().nullable().optional(),
   ativo: z.boolean().optional(),
 });
 
@@ -82,6 +85,19 @@ export default async function lojaRoutes(app: FastifyInstance) {
 
     if (!aceitaEntrega && !aceitaRetirada) {
       return reply.code(400).send({ erro: "A loja precisa aceitar entrega, retirada, ou as duas" });
+    }
+
+    const cashbackAtivo = parsed.data.cashbackAtivo !== undefined ? parsed.data.cashbackAtivo : atual.cashbackAtivo;
+    const cashbackTipo = parsed.data.cashbackTipo !== undefined ? parsed.data.cashbackTipo : atual.cashbackTipo;
+    const cashbackValor = parsed.data.cashbackValor !== undefined ? parsed.data.cashbackValor : atual.cashbackValor;
+
+    if (cashbackAtivo) {
+      if (!cashbackTipo || cashbackValor == null) {
+        return reply.code(400).send({ erro: "Defina o tipo e o valor do cashback antes de ativá-lo" });
+      }
+      if (cashbackTipo === "percentual" && Number(cashbackValor) > 100) {
+        return reply.code(400).send({ erro: "Cashback percentual não pode passar de 100%" });
+      }
     }
 
     if (parsed.data.ativo === true) {

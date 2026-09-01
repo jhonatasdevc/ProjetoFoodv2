@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { TipoFrete } from "@delivery/shared";
+import type { Loja, TipoCashback, TipoFrete } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
 import { atualizarLojaMe, uploadImagem } from "@/lib/api";
@@ -201,6 +201,103 @@ function ArrobaEditor({ arrobaAtual }: { arrobaAtual: string }) {
   );
 }
 
+function CashbackEditor({ loja }: { loja: Loja }) {
+  const { auth, atualizarLoja } = useAuth();
+  const [ativo, setAtivo] = useState(loja.cashbackAtivo);
+  const [tipo, setTipo] = useState<TipoCashback>(loja.cashbackTipo ?? "percentual");
+  const [valor, setValor] = useState(loja.cashbackValor != null ? String(loja.cashbackValor) : "");
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function handleSalvar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!auth) return;
+    setErro(null);
+    setMensagem(null);
+    setSalvando(true);
+    try {
+      const nova = await atualizarLojaMe(auth.token, {
+        cashbackAtivo: ativo,
+        cashbackTipo: tipo,
+        cashbackValor: ativo ? (valor ? Number(valor) : null) : null,
+      });
+      atualizarLoja(nova);
+      setMensagem("Cashback atualizado.");
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Erro ao salvar cashback");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section>
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">Cashback por indicação</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Quem compartilha o link da sua loja ganha esse cashback quando a pessoa indicada faz o primeiro pedido e ele
+        é entregue. O cashback vira desconto usável em pedidos futuros nessa loja.
+      </p>
+      <form onSubmit={handleSalvar} className="space-y-4">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-900 border border-gray-200 rounded-lg p-3">
+          <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} className="accent-red-600" />
+          Ativar cashback por indicação
+        </label>
+
+        {ativo && (
+          <div className="pl-1 space-y-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="tipoCashback"
+                checked={tipo === "percentual"}
+                onChange={() => setTipo("percentual")}
+                className="accent-red-600"
+              />
+              % do valor do pedido indicado
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="tipoCashback"
+                checked={tipo === "valor_fixo"}
+                onChange={() => setTipo("valor_fixo")}
+                className="accent-red-600"
+              />
+              Valor fixo (R$)
+            </label>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">
+                {tipo === "percentual" ? "Percentual (%)" : "Valor (R$)"}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                max={tipo === "percentual" ? 100 : undefined}
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                placeholder="0,00"
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
+          </div>
+        )}
+
+        {mensagem && <p className="text-sm text-green-700">{mensagem}</p>}
+        {erro && <p className="text-sm text-red-600">{erro}</p>}
+        <button
+          type="submit"
+          disabled={salvando}
+          className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+        >
+          {salvando ? "Salvando..." : "Salvar cashback"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function PerfilContent() {
   const { auth, atualizarLoja } = useAuth();
   const loja = auth!.loja;
@@ -383,6 +480,8 @@ function PerfilContent() {
           </button>
         </form>
       </section>
+
+      <CashbackEditor loja={loja} />
     </main>
   );
 }

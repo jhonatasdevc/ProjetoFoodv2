@@ -22,6 +22,7 @@ export const PEDIDO_STATUS_LABEL: Record<PedidoStatus, string> = {
 
 // Como a loja cobra a entrega — só é relevante quando a loja aceita entrega (aceitaEntrega).
 export type TipoFrete = "gratis" | "pago";
+export type TipoCashback = "percentual" | "valor_fixo";
 
 // O que o CLIENTE escolheu num pedido específico — a loja pode aceitar entrega e retirada
 // ao mesmo tempo (não é exclusivo), então essa escolha é por pedido, não da loja.
@@ -51,6 +52,11 @@ export interface Loja {
   tipoFrete: TipoFrete;
   valorFrete: number | null;
   aceitaRetirada: boolean;
+  // Cashback por indicação: quem compartilha o link da loja ganha esse % ou valor fixo
+  // quando a pessoa indicada faz o primeiro pedido dela e ele é entregue.
+  cashbackAtivo: boolean;
+  cashbackTipo: TipoCashback | null;
+  cashbackValor: number | null;
   ativo: boolean;
   // Só vem preenchido nas rotas públicas voltadas pro cliente (GET /lojas/:id, cardápio,
   // grupos) — nas telas de admin/loja não é calculado.
@@ -95,6 +101,9 @@ export interface AtualizarLojaInput {
   tipoFrete?: TipoFrete;
   valorFrete?: number | null;
   aceitaRetirada?: boolean;
+  cashbackAtivo?: boolean;
+  cashbackTipo?: TipoCashback;
+  cashbackValor?: number | null;
   ativo?: boolean;
 }
 
@@ -157,6 +166,11 @@ export interface CriarPedidoInput {
   tipoEntrega: TipoEntregaPedido;
   idEndereco?: number;
   cupomCodigo?: string;
+  // Id do usuário que compartilhou o link da loja (?ref=) — só conta se for o primeiro
+  // pedido desse cliente nessa loja e ninguém tiver indicado a si mesmo.
+  codigoIndicacao?: number;
+  // Usa o saldo de cashback que o cliente já tem nessa loja como desconto neste pedido.
+  usarCashback?: boolean;
   formaPagamento: "dinheiro" | "pix" | "cartao_credito" | "cartao_debito";
   observacoes?: string;
   itens: PedidoItemInput[];
@@ -194,6 +208,7 @@ export interface Pedido {
   total: number;
   valorDesconto: number;
   valorFrete: number;
+  valorCashbackUsado: number;
   tipoEntrega: TipoEntregaPedido;
   observacoes: string | null;
   criadoEm: string;
@@ -362,6 +377,18 @@ export interface StoriesLoja {
 
 export interface NovoStoryInput {
   imagemUrl: string;
+}
+
+export interface CashbackSaldoLoja {
+  idLoja: number;
+  lojaArroba: string;
+  lojaNome: string;
+  saldo: number;
+}
+
+export interface CarteiraResponse {
+  totalCashback: number;
+  porLoja: CashbackSaldoLoja[];
 }
 
 export interface Favorito {

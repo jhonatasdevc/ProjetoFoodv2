@@ -1,19 +1,66 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Endereco } from "@delivery/shared";
+import type { CarteiraResponse, Endereco } from "@delivery/shared";
 import { useAuth } from "@/lib/auth-context";
 import { ProtectedRoute } from "../protected-route";
-import { criarEndereco, editarEndereco, excluirEndereco, listEnderecos, patchUsuarioMe } from "@/lib/api";
+import { criarEndereco, editarEndereco, excluirEndereco, getCarteira, listEnderecos, patchUsuarioMe } from "@/lib/api";
 import { buscarCep, formatarCep } from "@/lib/cep";
 
 const ENDERECO_VAZIO = { cep: "", cidade: "", estado: "", rua: "", numero: "", complemento: "", referencia: "" };
+
+function formatBRL(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function CarteiraTab() {
+  const { auth } = useAuth();
+  const [carteira, setCarteira] = useState<CarteiraResponse | null>(null);
+
+  useEffect(() => {
+    if (!auth) return;
+    getCarteira(auth.token).then(setCarteira);
+  }, [auth]);
+
+  if (!carteira) return <p className="text-sm text-gray-500">Carregando...</p>;
+
+  return (
+    <section>
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-green-800">Total em cashback</p>
+        <p className="text-2xl font-bold text-green-700">{formatBRL(carteira.totalCashback)}</p>
+      </div>
+
+      {carteira.porLoja.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          Você ainda não tem cashback. Compartilhe o link de uma loja (botão ↗ Compartilhar na página dela) — quando
+          alguém pedir pela primeira vez por lá, você ganha cashback quando o pedido for entregue.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {carteira.porLoja.map((s) => (
+            <Link
+              key={s.idLoja}
+              href={`/loja/${s.lojaArroba}`}
+              className="flex items-center justify-between border border-red-100 rounded-lg p-4 hover:bg-red-50"
+            >
+              <span className="font-medium text-gray-900">{s.lojaNome}</span>
+              <span className="text-green-700 font-semibold">{formatBRL(s.saldo)}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function PerfilContent() {
   const { auth } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [aba, setAba] = useState<"dados" | "carteira">("dados");
   const [nome, setNome] = useState(auth?.usuario.nome ?? "");
   const [sobrenome, setSobrenome] = useState(auth?.usuario.sobrenome ?? "");
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
@@ -107,6 +154,29 @@ function PerfilContent() {
     <main className="flex-1 p-6 max-w-lg mx-auto w-full space-y-8">
       <h1 className="text-xl font-bold text-red-600 mb-2">Meu perfil</h1>
 
+      <div className="flex gap-2 border-b border-gray-100">
+        <button
+          onClick={() => setAba("dados")}
+          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+            aba === "dados" ? "border-red-600 text-red-600" : "border-transparent text-gray-500"
+          }`}
+        >
+          Meus dados
+        </button>
+        <button
+          onClick={() => setAba("carteira")}
+          className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+            aba === "carteira" ? "border-red-600 text-red-600" : "border-transparent text-gray-500"
+          }`}
+        >
+          Carteira
+        </button>
+      </div>
+
+      {aba === "carteira" && <CarteiraTab />}
+
+      {aba === "dados" && (
+        <>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Meus endereços</h2>
         <div className="space-y-2 mb-6">
@@ -241,6 +311,8 @@ function PerfilContent() {
           </button>
         </form>
       </section>
+        </>
+      )}
     </main>
   );
 }

@@ -8,12 +8,15 @@ import { emitirPedidoAtualizado, emitirPedidoCriado } from "../socket.js";
 import { enviarPushParaUsuario } from "../push.js";
 import { lojaEstaAberta } from "../horario.js";
 import { validarCupom } from "./cupom.js";
+import { saldoCashback } from "../cashback.js";
 
 const criarPedidoSchema = z.object({
   idLoja: z.number().int(),
   tipoEntrega: z.enum(["entrega", "retirada"]),
   idEndereco: z.number().int().optional(),
   cupomCodigo: z.string().optional(),
+  codigoIndicacao: z.number().int().positive().optional(),
+  usarCashback: z.boolean().optional(),
   formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito"]),
   observacoes: z.string().optional(),
   itens: z
@@ -121,6 +124,26 @@ export default async function pedidoRoutes(app: FastifyInstance) {
       valorDesconto = Math.min(resultado.valorDesconto, total);
     }
 
+    let valorCashbackUsado = 0;
+    if (input.usarCashback) {
+      const saldo = await saldoCashback(usuario.id, input.idLoja);
+      valorCashbackUsado = Math.max(0, Math.min(saldo, total - valorDesconto));
+    }
+
+    // Quem indicou a loja pra esse cliente — só grava se não for autoindicação e a loja
+    // tiver cashback ativo no momento do pedido (a taxa fica travada nesse valor).
+    let idUsuarioIndicador: number | undefined;
+    let cashbackIndicacaoTipo: string | undefined;
+    let cashbackIndicacaoValor: number | undefined;
+    if (input.codigoIndicacao && input.codigoIndicacao !== usuario.id && loja.cashbackAtivo && loja.cashbackTipo && loja.cashbackValor != null) {
+      const indicador = await prisma.usuario.findUnique({ where: { id: input.codigoIndicacao } });
+      if (indicador) {
+        idUsuarioIndicador = indicador.id;
+        cashbackIndicacaoTipo = loja.cashbackTipo;
+        cashbackIndicacaoValor = Number(loja.cashbackValor);
+      }
+    }
+
     const enderecoTexto = retirada
       ? `Retirada no local — ${loja.endereco ?? loja.nome}`
       : `${endereco!.rua}, ${endereco!.numero}${endereco!.complemento ? ` - ${endereco!.complemento}` : ""} - ${endereco!.cidade}/${endereco!.estado} - CEP ${endereco!.cep}`;
@@ -133,12 +156,16 @@ export default async function pedidoRoutes(app: FastifyInstance) {
         idUsuario: usuario.id,
         idEndereco: endereco?.id,
         idCupom,
+        idUsuarioIndicador,
+        cashbackIndicacaoTipo,
+        cashbackIndicacaoValor,
+        valorCashbackUsado,
         clienteNome: `${usuario.nome} ${usuario.sobrenome}`,
         clienteTelefone: usuario.telefone,
         enderecoTexto,
         formaPagamento: input.formaPagamento,
         observacoes: input.observacoes,
-        total: total - valorDesconto + valorFrete,
+        total: total - valorDesconto - valorCashbackUsado + valorFrete,
         valorDesconto,
         valorFrete,
         tipoEntrega: input.tipoEntrega,
@@ -147,6 +174,12 @@ export default async function pedidoRoutes(app: FastifyInstance) {
       },
       include: PEDIDO_INCLUDE,
     });
+
+    if (valorCashbackUsado > 0) {
+      await prisma.cashbackMovimento.create({
+        data: { idUsuario: usuario.id, idLoja: input.idLoja, idPedido: pedido.id, tipo: "debito", valor: valorCashbackUsado },
+      });
+    }
 
     const serializado = serializePedido(pedido);
     emitirPedidoCriado(pedido.idLoja, serializado);
@@ -238,6 +271,29 @@ export default async function pedidoRoutes(app: FastifyInstance) {
           : `${pedido.loja.nome} — chegando em breve.`,
         url: `/pedido/${pedido.id}`,
       }).catch(() => {});
+    }
+
+    // Cashback de indicação: só paga se for o primeiro pedido do cliente indicado nessa
+    // loja (indicações em pedidos posteriores não contam de novo).
+    if (novoStatus === "entregue" && pedido.idUsuarioIndicador && pedido.cashbackIndicacaoTipo && pedido.cashbackIndicacaoValor != null) {
+      const outrosPedidosNaLoja = await prisma.pedido.count({
+        where: { idLoja: pedido.idLoja, idUsuario: pedido.idUsuario, id: { not: pedido.id } },
+      });
+      if (outrosPedidosNaLoja === 0) {
+        const valorCashback =
+          pedido.cashbackIndicacaoTipo === "percentual"
+            ? (Number(pedido.total) * Number(pedido.cashbackIndicacaoValor)) / 100
+            : Number(pedido.cashbackIndicacaoValor);
+        await prisma.cashbackMovimento.create({
+          data: {
+            idUsuario: pedido.idUsuarioIndicador,
+            idLoja: pedido.idLoja,
+            idPedido: pedido.id,
+            tipo: "credito",
+            valor: valorCashback,
+          },
+        });
+      }
     }
 
     return serializado;

@@ -13,6 +13,7 @@ import uploadRoutes from "./routes/upload.js";
 import storyRoutes from "./routes/story.js";
 import horarioRoutes from "./routes/horario.js";
 import mensagemRoutes from "./routes/mensagem.js";
+import carteiraRoutes from "./routes/carteira.js";
 import { initSocket } from "./socket.js";
 import { configurarWebPush } from "./push.js";
 
@@ -41,6 +42,7 @@ await app.register(uploadRoutes, { prefix: "/api" });
 await app.register(storyRoutes, { prefix: "/api" });
 await app.register(horarioRoutes, { prefix: "/api" });
 await app.register(mensagemRoutes, { prefix: "/api" });
+await app.register(carteiraRoutes, { prefix: "/api" });
 
 await app.ready();
 initSocket(app.server, CORS_ORIGIN);

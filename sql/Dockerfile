@@ -65,11 +65,18 @@ CREATE TABLE loja (
   tipo_frete         VARCHAR(20) NOT NULL DEFAULT 'pago',
   valor_frete        NUMERIC(10,2),
   aceita_retirada    BOOLEAN NOT NULL DEFAULT false,
+  -- Cashback por indicação: quem compartilha o link da loja (/loja/{arroba}?ref={idUsuario})
+  -- ganha esse % ou valor fixo quando a pessoa indicada faz o PRIMEIRO pedido dela nessa
+  -- loja e ele chega em "entregue". cashback_tipo/valor só são obrigatórios quando ativo.
+  cashback_ativo     BOOLEAN NOT NULL DEFAULT false,
+  cashback_tipo      VARCHAR(20),
+  cashback_valor     NUMERIC(10,2),
   ativo              BOOLEAN NOT NULL DEFAULT false,
   criado_em          TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT loja_tipo_frete_check CHECK (tipo_frete IN ('gratis','pago')),
   CONSTRAINT loja_aceita_algo_check CHECK (aceita_entrega OR aceita_retirada),
-  CONSTRAINT loja_arroba_formato_check CHECK (arroba ~ '^[a-z0-9_]{3,30}$')
+  CONSTRAINT loja_arroba_formato_check CHECK (arroba ~ '^[a-z0-9_]{3,30}$'),
+  CONSTRAINT loja_cashback_tipo_check CHECK (cashback_tipo IS NULL OR cashback_tipo IN ('percentual','valor_fixo'))
 );
 
 -- Uma linha por dia da semana (0=domingo .. 6=sábado) por loja. "fechado=true" ignora
@@ -222,6 +229,15 @@ CREATE TABLE pedido (
   id_usuario        INTEGER NOT NULL REFERENCES usuario(id),
   id_endereco       INTEGER REFERENCES endereco(id) ON DELETE SET NULL,
   id_cupom          INTEGER REFERENCES cupom(id) ON DELETE SET NULL,
+  -- Quem indicou a loja pra esse cliente (via /loja/{arroba}?ref={idUsuario}). Só gera
+  -- cashback pro indicador se esse for o primeiro pedido do id_usuario nessa loja e o
+  -- pedido chegar em "entregue" — validado na API, não aqui. cashback_indicacao_tipo/valor
+  -- é um snapshot da config da loja no momento do pedido (não muda se a loja alterar depois).
+  id_usuario_indicador     INTEGER REFERENCES usuario(id) ON DELETE SET NULL,
+  cashback_indicacao_tipo  VARCHAR(20),
+  cashback_indicacao_valor NUMERIC(10,2),
+  -- Cashback que O PRÓPRIO cliente já tinha de saldo nessa loja e usou como desconto aqui.
+  valor_cashback_usado     NUMERIC(10,2) NOT NULL DEFAULT 0,
   cliente_nome      VARCHAR(120) NOT NULL,
   cliente_telefone  VARCHAR(20) NOT NULL,
   endereco_texto    TEXT NOT NULL,
@@ -237,7 +253,8 @@ CREATE TABLE pedido (
   criado_em         TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em     TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT pedido_status_check CHECK (status IN ('recebido','preparando','saiu_entrega','entregue','cancelado')),
-  CONSTRAINT pedido_tipo_entrega_check CHECK (tipo_entrega IN ('entrega','retirada'))
+  CONSTRAINT pedido_tipo_entrega_check CHECK (tipo_entrega IN ('entrega','retirada')),
+  CONSTRAINT pedido_cashback_indicacao_tipo_check CHECK (cashback_indicacao_tipo IS NULL OR cashback_indicacao_tipo IN ('percentual','valor_fixo'))
 );
 
 CREATE TABLE pedido_item (
@@ -273,6 +290,23 @@ CREATE TABLE pedido_mensagem (
   criado_em     TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT pedido_mensagem_remetente_check CHECK (remetente IN ('cliente','loja'))
 );
+
+-- Extrato de cashback por indicação: um lançamento de crédito quando um pedido indicado
+-- é entregue, e um de débito quando o cliente usa o saldo como desconto num pedido. O
+-- saldo por loja é a soma dos lançamentos — não guardamos um saldo separado.
+CREATE TABLE cashback_movimento (
+  id            SERIAL PRIMARY KEY,
+  id_usuario    INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  id_loja       INTEGER NOT NULL REFERENCES loja(id) ON DELETE CASCADE,
+  id_pedido     INTEGER REFERENCES pedido(id) ON DELETE SET NULL,
+  tipo          VARCHAR(10) NOT NULL,
+  valor         NUMERIC(10,2) NOT NULL,
+  criado_em     TIMESTAMP NOT NULL DEFAULT now(),
+  CONSTRAINT cashback_movimento_tipo_check CHECK (tipo IN ('credito','debito'))
+);
+
+CREATE INDEX idx_cashback_movimento_usuario ON cashback_movimento(id_usuario);
+CREATE INDEX idx_cashback_movimento_usuario_loja ON cashback_movimento(id_usuario, id_loja);
 
 CREATE INDEX idx_pedido_mensagem_pedido ON pedido_mensagem(id_pedido);
 CREATE INDEX idx_loja_grupo ON loja(id_grupo);

@@ -55,6 +55,9 @@ model Loja {
   tipoFrete       String      @default("pago") @map("tipo_frete") @db.VarChar(20)
   valorFrete      Decimal?    @map("valor_frete") @db.Decimal(10, 2)
   aceitaRetirada  Boolean     @default(false) @map("aceita_retirada")
+  cashbackAtivo   Boolean     @default(false) @map("cashback_ativo")
+  cashbackTipo    String?     @map("cashback_tipo") @db.VarChar(20)
+  cashbackValor   Decimal?    @map("cashback_valor") @db.Decimal(10, 2)
   ativo           Boolean     @default(false)
   criadoEm        DateTime    @default(now()) @map("criado_em")
   grupo      Grupo       @relation(fields: [idGrupo], references: [id])
@@ -64,6 +67,7 @@ model Loja {
   favoritos  Favorito[]
   horarios   HorarioFuncionamento[]
   fechamentos FechamentoTemporario[]
+  cashbackMovimentos CashbackMovimento[]
 
   @@map("loja")
 }
@@ -111,8 +115,10 @@ model Usuario {
   criadoEm  DateTime   @default(now()) @map("criado_em")
   enderecos Endereco[]
   pedidos   Pedido[]
+  pedidosIndicados Pedido[] @relation("PedidoIndicador")
   favoritos Favorito[]
   pushSubscriptions PushSubscription[]
+  cashbackMovimentos CashbackMovimento[]
 
   @@map("usuario")
 }
@@ -233,6 +239,10 @@ model Pedido {
   idUsuario        Int          @map("id_usuario")
   idEndereco       Int?         @map("id_endereco")
   idCupom          Int?         @map("id_cupom")
+  idUsuarioIndicador     Int?     @map("id_usuario_indicador")
+  cashbackIndicacaoTipo  String?  @map("cashback_indicacao_tipo") @db.VarChar(20)
+  cashbackIndicacaoValor Decimal? @map("cashback_indicacao_valor") @db.Decimal(10, 2)
+  valorCashbackUsado     Decimal  @default(0) @map("valor_cashback_usado") @db.Decimal(10, 2)
   clienteNome      String       @map("cliente_nome") @db.VarChar(120)
   clienteTelefone  String       @map("cliente_telefone") @db.VarChar(20)
   enderecoTexto    String       @map("endereco_texto")
@@ -247,11 +257,13 @@ model Pedido {
   atualizadoEm     DateTime     @default(now()) @map("atualizado_em")
   loja             Loja         @relation(fields: [idLoja], references: [id])
   usuario          Usuario      @relation(fields: [idUsuario], references: [id])
+  usuarioIndicador Usuario?     @relation("PedidoIndicador", fields: [idUsuarioIndicador], references: [id], onDelete: SetNull)
   endereco         Endereco?    @relation(fields: [idEndereco], references: [id], onDelete: SetNull)
   cupom            Cupom?       @relation(fields: [idCupom], references: [id], onDelete: SetNull)
   itens            PedidoItem[]
   statusHistorico  PedidoStatusHistorico[]
   mensagens        PedidoMensagem[]
+  cashbackMovimentos CashbackMovimento[]
 
   @@map("pedido")
 }
@@ -300,4 +312,21 @@ model PedidoMensagem {
   pedido    Pedido   @relation(fields: [idPedido], references: [id], onDelete: Cascade)
 
   @@map("pedido_mensagem")
+}
+
+model CashbackMovimento {
+  id        Int      @id @default(autoincrement())
+  idUsuario Int      @map("id_usuario")
+  idLoja    Int      @map("id_loja")
+  idPedido  Int?     @map("id_pedido")
+  tipo      String   @db.VarChar(10)
+  valor     Decimal  @db.Decimal(10, 2)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  usuario   Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  loja      Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  pedido    Pedido?  @relation(fields: [idPedido], references: [id], onDelete: SetNull)
+
+  @@index([idUsuario])
+  @@index([idUsuario, idLoja])
+  @@map("cashback_movimento")
 }
