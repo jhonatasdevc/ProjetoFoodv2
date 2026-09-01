@@ -53,6 +53,8 @@ export interface Loja {
   // Só vem preenchido nas rotas públicas voltadas pro cliente (GET /lojas/:id, cardápio,
   // grupos) — nas telas de admin/loja não é calculado.
   abertaAgora?: boolean;
+  // Só vem preenchido no cardápio (GET /lojas/:id/cardapio) — contagem de favoritos.
+  totalFavoritos?: number;
 }
 
 export interface HorarioFuncionamento {

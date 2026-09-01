@@ -76,28 +76,36 @@ function CartBar({
   );
 }
 
-function BotaoFavoritar({ idLoja }: { idLoja: number }) {
+function BotaoFavoritar({ idLoja, totalFavoritos }: { idLoja: number; totalFavoritos: number }) {
   const router = useRouter();
   const { favoritado, alternar, carregando, logado } = useFavoritoLoja(idLoja);
+  const [contador, setContador] = useState(totalFavoritos);
 
-  function handleClick() {
+  useEffect(() => {
+    setContador(totalFavoritos);
+  }, [totalFavoritos]);
+
+  async function handleClick() {
     if (!logado) {
       router.push(`/login?redirect=/loja/${idLoja}`);
       return;
     }
-    alternar();
+    const eraFavoritado = favoritado;
+    await alternar();
+    setContador((c) => c + (eraFavoritado ? -1 : 1));
   }
 
   return (
     <button
       onClick={handleClick}
       disabled={carregando}
+      aria-label={favoritado ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       className={`shrink-0 flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border disabled:opacity-50 ${
         favoritado ? "bg-red-600 border-red-600 text-white" : "bg-white border-gray-300 text-gray-700 hover:border-red-400"
       }`}
     >
       <span aria-hidden>{favoritado ? "♥" : "♡"}</span>
-      {favoritado ? "Favoritado" : "Salvar Favoritos"}
+      <span>{contador}</span>
     </button>
   );
 }
@@ -134,7 +142,7 @@ function Cardapio({ data }: { data: CardapioResponse }) {
             {fechada ? "Fechada no momento" : "Aberta agora"}
           </p>
         </div>
-        <BotaoFavoritar idLoja={data.loja.id} />
+        <BotaoFavoritar idLoja={data.loja.id} totalFavoritos={data.loja.totalFavoritos ?? 0} />
       </header>
 
       {fechada && (

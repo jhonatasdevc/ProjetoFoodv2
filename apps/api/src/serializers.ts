@@ -40,6 +40,7 @@ export function serializeLoja(loja: {
   valorFrete: Prisma.Decimal | number | null;
   aceitaRetirada: boolean;
   ativo: boolean;
+  totalFavoritos?: number;
 }): Loja {
   return {
     id: loja.id,
@@ -55,6 +56,7 @@ export function serializeLoja(loja: {
     valorFrete: loja.valorFrete != null ? num(loja.valorFrete) : null,
     aceitaRetirada: loja.aceitaRetirada,
     ativo: loja.ativo,
+    ...(loja.totalFavoritos !== undefined ? { totalFavoritos: loja.totalFavoritos } : {}),
   };
 }
 

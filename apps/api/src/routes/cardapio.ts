@@ -41,7 +41,7 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     const idLoja = Number((req.params as { id: string }).id);
     const loja = await prisma.loja.findUnique({
       where: { id: idLoja },
-      include: { horarios: true, fechamentos: true },
+      include: { horarios: true, fechamentos: true, _count: { select: { favoritos: true } } },
     });
     if (!loja || !loja.ativo) return reply.code(404).send({ erro: "Loja não encontrada" });
 
@@ -52,7 +52,7 @@ export default async function cardapioRoutes(app: FastifyInstance) {
     });
 
     return {
-      loja: serializeLojaComHorario(loja),
+      loja: serializeLojaComHorario({ ...loja, totalFavoritos: loja._count.favoritos }),
       categorias: categorias.map(serializeCategoria),
     };
   });
