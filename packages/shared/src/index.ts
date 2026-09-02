@@ -43,6 +43,7 @@ export interface Loja {
   arroba: string;
   email: string;
   telefone: string | null;
+  cnpj: string | null;
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
@@ -95,6 +96,9 @@ export interface NovoFechamentoInput {
 
 export interface AtualizarLojaInput {
   arroba?: string;
+  cnpj?: string | null;
+  endereco?: string | null;
+  telefone?: string | null;
   imagemUrl?: string | null;
   imagemPerfilUrl?: string | null;
   aceitaEntrega?: boolean;

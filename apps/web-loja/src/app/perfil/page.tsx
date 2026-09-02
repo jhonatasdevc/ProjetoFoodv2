@@ -84,8 +84,8 @@ function FotoUploader({
   }
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">{titulo}</h2>
+    <div>
+      <h3 className="font-medium text-gray-900 mb-1">{titulo}</h3>
       <p className="text-sm text-gray-500 mb-4">{descricao}</p>
 
       <div
@@ -139,64 +139,113 @@ function FotoUploader({
           )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-function ArrobaEditor({ arrobaAtual }: { arrobaAtual: string }) {
+function formatarCnpj(valor: string) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 14);
+  return digitos
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function DadosEditor({ loja }: { loja: Loja }) {
   const { auth, atualizarLoja } = useAuth();
-  const [arroba, setArroba] = useState(arrobaAtual);
+  const [arroba, setArroba] = useState(loja.arroba);
+  const [cnpj, setCnpj] = useState(loja.cnpj ?? "");
+  const [endereco, setEndereco] = useState(loja.endereco ?? "");
+  const [telefone, setTelefone] = useState(loja.telefone ?? "");
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault();
-    if (!auth || arroba === arrobaAtual) return;
+    if (!auth) return;
     setErro(null);
     setMensagem(null);
     setSalvando(true);
     try {
-      const nova = await atualizarLojaMe(auth.token, { arroba });
+      const nova = await atualizarLojaMe(auth.token, {
+        arroba,
+        cnpj: cnpj || null,
+        endereco: endereco || null,
+        telefone: telefone || null,
+      });
       atualizarLoja(nova);
-      setMensagem("@ atualizado.");
+      setMensagem("Dados atualizados.");
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Erro ao salvar @");
+      setErro(err instanceof Error ? err.message : "Erro ao salvar dados");
     } finally {
       setSalvando(false);
     }
   }
 
   return (
-    <section>
-      <h2 className="font-semibold text-gray-900 mb-1">Link da loja</h2>
-      <p className="text-sm text-gray-500 mb-3">
-        Esse é o endereço que o cliente acessa: pedidos.eazyclub.com.br/loja/<strong>{arroba || "..."}</strong>
-      </p>
-      <form onSubmit={handleSalvar} className="flex gap-2 items-start">
-        <div className="flex items-center border border-gray-300 rounded px-3 focus-within:ring-1 focus-within:ring-red-400">
-          <span className="text-gray-400">@</span>
+    <section className="border border-gray-200 rounded-xl p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados</h2>
+      <form onSubmit={handleSalvar} className="space-y-4">
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Link da loja</label>
+          <div className="flex items-center border border-gray-300 rounded px-3 focus-within:ring-1 focus-within:ring-red-400">
+            <span className="text-gray-400 shrink-0">pedidos.eazyclub.com.br/loja/</span>
+            <input
+              required
+              minLength={3}
+              maxLength={30}
+              pattern="[a-z0-9_]+"
+              title="Só letras minúsculas, números e underscore"
+              value={arroba}
+              onChange={(e) => setArroba(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+              className="flex-1 py-2 px-1 outline-none min-w-0"
+            />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">CNPJ</label>
+            <input
+              value={cnpj}
+              onChange={(e) => setCnpj(formatarCnpj(e.target.value))}
+              placeholder="00.000.000/0000-00"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Telefone</label>
+            <input
+              value={telefone}
+              onChange={(e) => setTelefone(e.target.value)}
+              placeholder="(11) 99999-9999"
+              className="w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">Endereço</label>
           <input
-            required
-            minLength={3}
-            maxLength={30}
-            pattern="[a-z0-9_]+"
-            title="Só letras minúsculas, números e underscore"
-            value={arroba}
-            onChange={(e) => setArroba(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-            className="py-2 px-1 outline-none"
+            value={endereco}
+            onChange={(e) => setEndereco(e.target.value)}
+            placeholder="Rua, número - bairro, cidade/UF"
+            className="w-full border border-gray-300 rounded px-3 py-2"
           />
         </div>
+
+        {mensagem && <p className="text-sm text-green-700">{mensagem}</p>}
+        {erro && <p className="text-sm text-red-600">{erro}</p>}
         <button
           type="submit"
-          disabled={salvando || arroba === arrobaAtual}
+          disabled={salvando}
           className="bg-red-600 text-white text-sm font-medium px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
         >
-          {salvando ? "Salvando..." : "Salvar"}
+          {salvando ? "Salvando..." : "Salvar dados"}
         </button>
       </form>
-      {mensagem && <p className="text-sm text-green-700 mt-2">{mensagem}</p>}
-      {erro && <p className="text-sm text-red-600 mt-2">{erro}</p>}
     </section>
   );
 }
@@ -232,8 +281,8 @@ function CashbackEditor({ loja }: { loja: Loja }) {
   }
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">Cashback por indicação</h2>
+    <section className="border border-gray-200 rounded-xl p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-1">Cashback</h2>
       <p className="text-sm text-gray-500 mb-4">
         Quem compartilha o link da sua loja ganha esse cashback quando a pessoa indicada faz o primeiro pedido e ele
         é entregue. O cashback vira desconto usável em pedidos futuros nessa loja.
@@ -352,10 +401,8 @@ function PerfilContent() {
   }
 
   return (
-    <main className="flex-1 p-6 max-w-lg mx-auto w-full space-y-8">
+    <main className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
       <h1 className="text-xl font-bold text-red-600 mb-2">Perfil da loja</h1>
-
-      <ArrobaEditor arrobaAtual={loja.arroba} />
 
       {loja.ativo ? (
         <div className="border border-green-200 bg-green-50 rounded-lg p-4 text-sm text-green-800">
@@ -380,29 +427,36 @@ function PerfilContent() {
         </div>
       )}
 
-      <FotoUploader
-        titulo="Foto de capa"
-        descricao="Aparece na página da sua loja e nas listas de restaurantes do app do cliente. Tamanho recomendado: 480x600px (proporção 4:5). Máx. 5MB."
-        formato="capa"
-        urlAtual={loja.imagemUrl}
-        onSalvar={async (url) => {
-          const nova = await atualizarLojaMe(auth!.token, { imagemUrl: url });
-          atualizarLoja(nova);
-        }}
-      />
+      <DadosEditor loja={loja} />
 
-      <FotoUploader
-        titulo="Foto de perfil"
-        descricao="Aparece em formato redondo, junto do nome da loja, em listas como 'Últimos Pedidos'. Máx. 5MB."
-        formato="perfil"
-        urlAtual={loja.imagemPerfilUrl}
-        onSalvar={async (url) => {
-          const nova = await atualizarLojaMe(auth!.token, { imagemPerfilUrl: url });
-          atualizarLoja(nova);
-        }}
-      />
+      <section className="border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Fotos</h2>
+        <div className="grid sm:grid-cols-2 gap-8">
+          <FotoUploader
+            titulo="Foto de capa"
+            descricao="Aparece na página da sua loja e nas listas de restaurantes do app do cliente. Tamanho recomendado: 480x600px (proporção 4:5). Máx. 5MB."
+            formato="capa"
+            urlAtual={loja.imagemUrl}
+            onSalvar={async (url) => {
+              const nova = await atualizarLojaMe(auth!.token, { imagemUrl: url });
+              atualizarLoja(nova);
+            }}
+          />
 
-      <section>
+          <FotoUploader
+            titulo="Foto de perfil"
+            descricao="Aparece em formato redondo, junto do nome da loja, em listas como 'Últimos Pedidos'. Máx. 5MB."
+            formato="perfil"
+            urlAtual={loja.imagemPerfilUrl}
+            onSalvar={async (url) => {
+              const nova = await atualizarLojaMe(auth!.token, { imagemPerfilUrl: url });
+              atualizarLoja(nova);
+            }}
+          />
+        </div>
+      </section>
+
+      <section className="border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Entrega</h2>
         <p className="text-sm text-gray-500 mb-4">
           Você pode aceitar entrega, retirada no local, ou as duas ao mesmo tempo — o cliente escolhe qual quer usar

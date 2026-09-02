@@ -35,6 +35,7 @@ export function serializeLoja(loja: {
   arroba: string;
   email: string;
   telefone: string | null;
+  cnpj: string | null;
   endereco: string | null;
   imagemUrl: string | null;
   imagemPerfilUrl: string | null;
@@ -55,6 +56,7 @@ export function serializeLoja(loja: {
     arroba: loja.arroba,
     email: loja.email,
     telefone: loja.telefone,
+    cnpj: loja.cnpj,
     endereco: loja.endereco,
     imagemUrl: loja.imagemUrl,
     imagemPerfilUrl: loja.imagemPerfilUrl,

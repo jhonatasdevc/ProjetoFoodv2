@@ -55,6 +55,7 @@ CREATE TABLE loja (
   email              VARCHAR(160) NOT NULL UNIQUE,
   senha_hash         VARCHAR(200) NOT NULL,
   telefone           VARCHAR(20),
+  cnpj               VARCHAR(18),
   endereco           VARCHAR(200),
   imagem_url         VARCHAR(300),
   imagem_perfil_url  VARCHAR(300),

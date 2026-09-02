@@ -16,6 +16,9 @@ const arrobaSchema = z
 
 const atualizarLojaSchema = z.object({
   arroba: arrobaSchema.optional(),
+  cnpj: z.string().nullable().optional(),
+  endereco: z.string().min(1).nullable().optional(),
+  telefone: z.string().nullable().optional(),
   imagemUrl: z.string().url().nullable().optional(),
   imagemPerfilUrl: z.string().url().nullable().optional(),
   aceitaEntrega: z.boolean().optional(),

@@ -48,6 +48,7 @@ model Loja {
   email           String      @unique @db.VarChar(160)
   senhaHash       String      @map("senha_hash") @db.VarChar(200)
   telefone        String?     @db.VarChar(20)
+  cnpj            String?     @db.VarChar(18)
   endereco        String?     @db.VarChar(200)
   imagemUrl       String?     @map("imagem_url") @db.VarChar(300)
   imagemPerfilUrl String?     @map("imagem_perfil_url") @db.VarChar(300)
