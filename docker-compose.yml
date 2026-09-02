@@ -46,6 +46,9 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-troque_esta_chave_vapid_publica}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-troque_esta_chave_vapid_privada}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contato@eazyclub.com.br}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
       NODE_ENV: production
     ports:
       - "3333:3333"           # API + Socket.io: http://localhost:3333 (local); no VPS o acesso público é via Traefik
